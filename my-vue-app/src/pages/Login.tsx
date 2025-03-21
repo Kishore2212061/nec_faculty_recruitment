@@ -11,6 +11,9 @@ export default function Login() {
     e.preventDefault();
     try {
       const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      console.log(res.data)
+      const userId = res.data.user.id;
+      localStorage.setItem('userId', userId);
       alert(res.data.message);
 
       // ✅ Navigate to dashboard after successful login
