@@ -3,7 +3,7 @@ import { saveExperience, getExperience } from '../controllers/experienceControll
 
 const router = express.Router();
 
-router.post('/experience/:userId', saveExperience);
-router.get('/experience/:userId', getExperience);
+router.post('/:userId', saveExperience);
+router.get('/:userId', getExperience);
 
 export default router;

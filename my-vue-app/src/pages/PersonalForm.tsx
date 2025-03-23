@@ -6,7 +6,7 @@ export default function PersonalForm() {
   const userId = localStorage.getItem('userId');
   const [formData, setFormData] = useState({
     fullName: '',
-    referenceNumber: '',
+    referenceNumber: userId,
     dateOfBirth: '',
     age: '',
     gender: '',
@@ -19,7 +19,7 @@ export default function PersonalForm() {
     mobileNumber: '',
     post: '',
     department: '',
-    appliedDate: '',
+    appliedDate: new Date().toISOString().split('T')[0],
     photo: '',
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -214,7 +214,7 @@ export default function PersonalForm() {
                   Basic Details
                 </h3>
                 <InputField name="fullName" placeholder="Full Name" />
-                <InputField name="referenceNumber" placeholder="Reference Number" />
+                {/* <InputField name="referenceNumber" placeholder="Reference Number" /> */}
                 <div className="grid grid-cols-2 gap-3">
                   <InputField name="dateOfBirth" placeholder="Date of Birth" type="date" />
                   <InputField name="age" placeholder="Age" type="number" />
@@ -258,7 +258,7 @@ export default function PersonalForm() {
                 <InputField name="caste" placeholder="Caste" />
                 <InputField name="post" placeholder="Post" />
                 <InputField name="department" placeholder="Department" />
-                <InputField name="appliedDate" placeholder="Applied Date" type="date" />
+                {/* <InputField name="appliedDate" placeholder="Applied Date" type="date" /> */}
               </div>
             </div>
           </div>
