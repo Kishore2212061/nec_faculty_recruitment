@@ -88,13 +88,13 @@ router.put("/:id", (req, res) => {
         university = ?, title = ?, guide_name = ?, guide_college = ?, status = ?, 
         year_of_registration = ?, year_of_completion = ?, 
         no_of_publications_during_phd = ?, no_of_publications_post_phd = ?, 
-        post_phd_experience = ? WHERE id = ?`,
+        post_phd_experience = ? WHERE user_id = ?`,
         [university, title, guide_name, guide_college, status, 
          year_of_registration, year_of_completion, no_of_publications_during_phd, 
          no_of_publications_post_phd, post_phd_experience, id],
         (err, results) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: "PhD record updated successfully" });
+            res.json({ message: "PhD record updated successfully" ,results});
         }
     );
 });
