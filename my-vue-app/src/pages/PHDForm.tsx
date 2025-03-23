@@ -18,43 +18,21 @@ interface FormErrors {
   [key: string]: string;
 }
 
-const PhDForm: React.FC<{}> = () => {
+const PhDForm: React.FC = () => {
   const userId = localStorage.getItem("userId");
-  const STORAGE_KEY = `phd_form_data_${userId}`;
-  const EDIT_MODE_KEY = `phd_form_edit_mode_${userId}`;
-  
-  // Initialize form data from localStorage if available
-  const getInitialFormData = (): FormData => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      try {
-        return JSON.parse(savedData);
-      } catch (e) {
-        console.error("Error parsing saved form data", e);
-      }
-    }
-    
-    return {
-      university: '',
-      title: '',
-      guideName: '',
-      college: '',
-      status: '',
-      registrationYear: '',
-      completionYear: '',
-      publicationsDuringPhD: '',
-      publicationsPostPhD: '',
-      postPhDExperience: '',
-    };
-  };
+  const [formData, setFormData] = useState<FormData>({
+    university: '',
+    title: '',
+    guideName: '',
+    college: '',
+    status: '',
+    registrationYear: '',
+    completionYear: '',
+    publicationsDuringPhD: '',
+    publicationsPostPhD: '',
+    postPhDExperience: '',
+  });
 
-  // Get edit mode from localStorage
-  const getEditMode = (): boolean => {
-    const savedEditMode = localStorage.getItem(EDIT_MODE_KEY);
-    return savedEditMode === 'true';
-  };
-
-  const [formData, setFormData] = useState<FormData>(getInitialFormData());
   const [errors, setErrors] = useState<FormErrors>({});
   const [focused, setFocused] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -63,75 +41,50 @@ const PhDForm: React.FC<{}> = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [existingData, setExistingData] = useState<boolean>(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [originalData, setOriginalData] = useState<FormData | null>(null);
 
-  // Use function to get current edit mode from localStorage
-  const isEditMode = getEditMode();
-
-  // Save form data to localStorage when it changes
   useEffect(() => {
-    // Only save to localStorage if we're in edit mode or during form submission
-    // Don't save during initial data fetch or when we're just displaying saved data
-    if (isEditMode || !dataFetched) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-    }
-  }, [formData, STORAGE_KEY, isEditMode, dataFetched]);
-
-  // Fetch existing data only once
-  useEffect(() => {
-    // Show form with delay for entrance animation
     setTimeout(() => setFormVisible(true), 300);
-    
-    // Fetch existing PhD data if available
-    const fetchExistingData = async () => {
-      if (!userId || dataFetched) return; // Skip if already fetched
-      
-      try {
-        setIsLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/phd/${userId}`);
-        
-        if (response.data && response.data.length > 0) {
-          // Log the response data to debug
-          console.log('API Response:', response.data);
-          
-          // Map API data structure to form data structure
-          const phdData = response.data[0];
-          
-          // Ensure we handle all data types correctly
-          const mappedData = {
-            university: phdData.university || '',
-            title: phdData.title || '',
-            guideName: phdData.guide_name || '',
-            college: phdData.guide_college || '',
-            status: phdData.status || '',
-            registrationYear: phdData.year_of_registration?.toString() || '',
-            completionYear: phdData.year_of_completion?.toString() || '',
-            publicationsDuringPhD: phdData.no_of_publications_during_phd?.toString() || '0',
-            publicationsPostPhD: phdData.no_of_publications_post_phd?.toString() || '0',
-            postPhDExperience: phdData.post_phd_experience || '',
-          };
-          
-          console.log('Mapped Form Data:', mappedData);
-          
-          // Update form data state with the mapped data and save to localStorage
-          setFormData(mappedData);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(mappedData));
-          
-          // Set submitted and existingData, but DON'T change edit mode in localStorage
-          if (!isEditMode) {
-            setSubmitted(true);
-          }
-          setExistingData(true);
-        }
-      } catch (error) {
-        console.error('Error fetching PhD data:', error);
-      } finally {
-        setIsLoading(false);
-        setDataFetched(true); // Mark data as fetched to prevent refetching
-      }
-    };
+    fetchPhDData();
+  }, [userId]);
 
-    fetchExistingData();
-  }, [userId]); // Only depend on userId to prevent re-fetching
+  const fetchPhDData = async () => {
+    if (!userId || dataFetched) return;
+
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`http://localhost:5000/api/phd/${userId}`);
+      
+      if (response.data && response.data.length > 0) {
+        const phdData = response.data[0];
+        
+        const mappedData = {
+          university: phdData.university || '',
+          title: phdData.title || '',
+          guideName: phdData.guide_name || '',
+          college: phdData.guide_college || '',
+          status: phdData.status || '',
+          registrationYear: phdData.year_of_registration?.toString() || '',
+          completionYear: phdData.year_of_completion?.toString() || '',
+          publicationsDuringPhD: phdData.no_of_publications_during_phd?.toString() || '0',
+          publicationsPostPhD: phdData.no_of_publications_post_phd?.toString() || '0',
+          postPhDExperience: phdData.post_phd_experience || '',
+        };
+
+        setFormData(mappedData);
+        setOriginalData(mappedData);
+        setExistingData(true);
+        setSubmitted(true);
+      }
+    } catch (error) {
+      console.error('Error fetching PhD data:', error);
+      setApiError('Failed to fetch PhD data. Please try again later.');
+    } finally {
+      setIsLoading(false);
+      setDataFetched(true);
+    }
+  };
 
   const validateField = (name: string, value: string): string => {
     switch (name) {
@@ -146,7 +99,6 @@ const PhDForm: React.FC<{}> = () => {
       case 'completionYear':
         const yearRegex = /^\d{4}$/;
         if (value.trim() === '') {
-          // Completion year can be empty if status is "Pursuing"
           if (name === 'completionYear' && formData.status === 'Pursuing') return '';
           return `${name === 'registrationYear' ? 'Registration' : 'Completion'} year is required`;
         }
@@ -183,61 +135,21 @@ const PhDForm: React.FC<{}> = () => {
     setFocused(null);
   };
 
-  const resetForm = () => {
-    if (isEditMode && existingData) {
-      // Cancel edit mode and revert to stored data
-      // Retrieve original data from localStorage
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        try {
-          setFormData(JSON.parse(savedData));
-        } catch (e) {
-          console.error("Error parsing saved form data", e);
-        }
+  const toggleEditMode = () => {
+    if (editMode) {
+      // Cancel edit - restore original data
+      if (originalData) {
+        setFormData(originalData);
       }
-      
       setErrors({});
-      setApiError(null);
-      localStorage.setItem(EDIT_MODE_KEY, 'false'); // Store edit mode in localStorage
-      setSubmitted(true); // Go back to view mode when canceling
-    } else {
-      // Complete reset
-      const emptyForm = {
-        university: '',
-        title: '',
-        guideName: '',
-        college: '',
-        status: '',
-        registrationYear: '',
-        completionYear: '',
-        publicationsDuringPhD: '',
-        publicationsPostPhD: '',
-        postPhDExperience: '',
-      };
-      
-      setFormData(emptyForm);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(emptyForm));
-      
-      setErrors({});
-      setApiError(null);
-      setSubmitted(false);
-      localStorage.setItem(EDIT_MODE_KEY, 'false'); // Store edit mode in localStorage
     }
-  };
-
-  const enableEditMode = () => {
-    localStorage.setItem(EDIT_MODE_KEY, 'true'); // Store edit mode in localStorage
-    setSubmitted(false); // This will ensure the form becomes editable
-    
-    // Force a re-render by updating a state
-    setFocused(''); // This is just a hack to force re-render
-    setTimeout(() => setFocused(null), 10); // Reset immediately
+    setEditMode(!editMode);
+    setSubmitted(!editMode);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Validate all fields
     const newErrors: FormErrors = {};
     Object.entries(formData).forEach(([key, value]) => {
       const errorMessage = validateField(key, value);
@@ -253,7 +165,6 @@ const PhDForm: React.FC<{}> = () => {
       setApiError(null);
       
       try {
-        // Prepare API payload based on the provided API structure
         const phdPayload = {
           user_id: userId,
           university: formData.university,
@@ -267,41 +178,23 @@ const PhDForm: React.FC<{}> = () => {
           no_of_publications_post_phd: parseInt(formData.publicationsPostPhD),
           post_phd_experience: formData.postPhDExperience
         };
-        
-        console.log('Submitting payload:', phdPayload);
-        
-        if (isEditMode || existingData) {
-          // Update existing record with PUT request
+
+        if (existingData) {
           await axios.put(`http://localhost:5000/api/phd/${userId}`, phdPayload);
-          console.log('Updated existing record');
         } else {
-          // Create new record with POST request
           await axios.post('http://localhost:5000/api/phd', phdPayload);
-          console.log('Created new record');
         }
-        
-        // Update localStorage with the latest data
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-        
-        // Important: Set states correctly after successful submission
+
+        setOriginalData(formData);
         setSubmitted(true);
-        localStorage.setItem(EDIT_MODE_KEY, 'false'); // Store edit mode in localStorage
+        setEditMode(false);
         setExistingData(true);
-      
-        console.log('Form submitted successfully:', formData);
       } catch (error) {
         console.error('Error submitting PhD data:', error);
-        setApiError('Failed to submit PhD information. Please try again later.');
+        setApiError('Failed to save PhD information. Please try again later.');
       } finally {
         setIsLoading(false);
       }
-    } else {
-      console.log('Validation errors:', newErrors);
-      // Animate error fields
-      document.querySelectorAll('.error').forEach(el => {
-        el.classList.add('animate-shake');
-        setTimeout(() => el.classList.remove('animate-shake'), 500);
-      });
     }
   };
 
@@ -312,7 +205,6 @@ const PhDForm: React.FC<{}> = () => {
     'Degree Awarded'
   ];
 
-  // Function to get dynamic classes for form groups
   const getFormGroupClasses = (fieldName: string) => {
     let classes = "transition-all duration-300 mb-4";
     
@@ -327,7 +219,6 @@ const PhDForm: React.FC<{}> = () => {
     return classes;
   };
 
-  // Function to get dynamic classes for inputs
   const getInputClasses = (fieldName: string) => {
     let classes = "w-full px-3 py-3 bg-gray-100 border-2 rounded-lg text-gray-800 text-base transition-all duration-300 focus:outline-none";
     
@@ -339,35 +230,83 @@ const PhDForm: React.FC<{}> = () => {
       classes += " border-gray-200";
     }
     
-    // Important: Only disable fields when submitted AND not in edit mode
-    if (submitted && !isEditMode) {
+    if (submitted && !editMode) {
       classes += " bg-gray-50 cursor-not-allowed";
     }
     
     return classes;
   };
 
-  const renderForm = () => (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className={getFormGroupClasses('university')} style={{animationDelay: '0.1s'}}>
-          <label htmlFor="university" className="block mb-2 font-medium text-gray-800">University</label>
-          <input
-            type="text"
-            id="university"
-            name="university"
-            value={formData.university}
-            onChange={handleChange}
-            onFocus={() => handleFocus('university')}
-            onBlur={handleBlur}
-            placeholder="Enter your university name"
-            className={getInputClasses('university')}
-            disabled={isLoading || (submitted && !isEditMode)}
-          />
-          {errors.university && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.university}</div>}
+  if (isLoading && !formVisible) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8 ${formVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-5'} transition-all duration-300`}>
+      <div className="flex justify-between items-center mb-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-indigo-500 to-emerald-500 inline-block text-transparent bg-clip-text">
+            PhD Information
+          </h1>
+          <p className="text-gray-400 text-base">
+            {submitted && !editMode 
+              ? "Your PhD details are shown below" 
+              : editMode 
+                ? "Update your PhD details below" 
+                : "Please provide your PhD details below"}
+          </p>
         </div>
         
-        <div className={getFormGroupClasses('title')} style={{animationDelay: '0.2s'}}>
+        {existingData && (
+          <button
+            onClick={toggleEditMode}
+            className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+              editMode
+                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            {editMode ? 'Cancel Edit' : 'Edit Information'}
+          </button>
+        )}
+      </div>
+      
+      {apiError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-red-700">
+          <p>{apiError}</p>
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit}>
+        {/* Form fields remain the same, just update the disabled prop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Include all your existing form fields here, with disabled={submitted && !editMode} */}
+          {/* Example of one field: */}
+          <div className={getFormGroupClasses('university')} style={{animationDelay: '0.1s'}}>
+            <label htmlFor="university" className="block mb-2 font-medium text-gray-800">University</label>
+            <input
+              type="text"
+              id="university"
+              name="university"
+              value={formData.university}
+              onChange={handleChange}
+              onFocus={() => handleFocus('university')}
+              onBlur={handleBlur}
+              placeholder="Enter your university name"
+              className={getInputClasses('university')}
+              disabled={submitted && !editMode}
+            />
+            {errors.university && (
+              <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.university}</div>
+            )}
+          </div>
+          
+          {/* Continue with all other fields... */}
+          <div className={getFormGroupClasses('title')} style={{animationDelay: '0.2s'}}>
           <label htmlFor="title" className="block mb-2 font-medium text-gray-800">Title of PhD</label>
           <input
             type="text"
@@ -379,7 +318,7 @@ const PhDForm: React.FC<{}> = () => {
             onBlur={handleBlur}
             placeholder="Enter your PhD title"
             className={getInputClasses('title')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.title && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.title}</div>}
         </div>
@@ -396,7 +335,7 @@ const PhDForm: React.FC<{}> = () => {
             onBlur={handleBlur}
             placeholder="Enter your guide's name"
             className={getInputClasses('guideName')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.guideName && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.guideName}</div>}
         </div>
@@ -413,7 +352,7 @@ const PhDForm: React.FC<{}> = () => {
             onBlur={handleBlur}
             placeholder="Enter your college name"
             className={getInputClasses('college')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.college && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.college}</div>}
         </div>
@@ -428,7 +367,7 @@ const PhDForm: React.FC<{}> = () => {
             onFocus={() => handleFocus('status')}
             onBlur={handleBlur}
             className={getInputClasses('status')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           >
             <option value="">Select Status</option>
             {statusOptions.map(option => (
@@ -451,7 +390,7 @@ const PhDForm: React.FC<{}> = () => {
             placeholder="YYYY"
             maxLength={4}
             className={getInputClasses('registrationYear')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.registrationYear && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.registrationYear}</div>}
         </div>
@@ -469,7 +408,7 @@ const PhDForm: React.FC<{}> = () => {
             placeholder="YYYY"
             maxLength={4}
             className={getInputClasses('completionYear')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.completionYear && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.completionYear}</div>}
         </div>
@@ -486,7 +425,7 @@ const PhDForm: React.FC<{}> = () => {
             onBlur={handleBlur}
             placeholder="Number of publications"
             className={getInputClasses('publicationsDuringPhD')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.publicationsDuringPhD && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.publicationsDuringPhD}</div>}
         </div>
@@ -503,7 +442,7 @@ const PhDForm: React.FC<{}> = () => {
             onBlur={handleBlur}
             placeholder="Number of publications"
             className={getInputClasses('publicationsPostPhD')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.publicationsPostPhD && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.publicationsPostPhD}</div>}
         </div>
@@ -520,73 +459,34 @@ const PhDForm: React.FC<{}> = () => {
             placeholder="Describe your post PhD experience"
             rows={4}
             className={getInputClasses('postPhDExperience')}
-            disabled={isLoading || (submitted && !isEditMode)}
+            disabled={submitted && !editMode}
           />
           {errors.postPhDExperience && <div className="text-red-500 text-sm mt-1 animate-fade-in">{errors.postPhDExperience}</div>}
         </div>
-      </div>
       
-      <div className="flex justify-center gap-4 mt-8" style={{animationDelay: '1.1s'}}>
-        {submitted && !isEditMode ? (
-          <button 
-            type="button" 
-            onClick={enableEditMode}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg"
-            disabled={isLoading}
-          >
-            Edit Information
-          </button>
-        ) : (
-          <>
-            <button 
-              type="submit" 
-              className={`bg-gradient-to-r from-indigo-500 to-emerald-500 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Submitting...' : isEditMode ? 'Update' : 'Submit'}
-            </button>
-            <button 
-              type="button" 
-              className="bg-transparent border-2 border-gray-200 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-all duration-300 hover:bg-gray-100 hover:border-gray-400"
-              onClick={resetForm}
-              disabled={isLoading}
-            >
-              {isEditMode ? 'Cancel' : 'Reset'}
-            </button>
-          </>
-        )}
-      </div>
-    </form>
-  );
-
-  if (isLoading && !formVisible) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`bg-white rounded-2xl shadow-lg w-full max-w-4xl p-8 ${formVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-5'} transition-all duration-300`}>
-      <div className="text-center mb-8 animate-fade-in">
-        <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-indigo-500 to-emerald-500 inline-block text-transparent bg-clip-text">PhD Information</h1>
-        <p className="text-gray-400 text-base">
-        {submitted && !isEditMode 
-            ? "Your PhD details are shown below" 
-            : isEditMode 
-              ? "Update your PhD details below" 
-              : "Please provide your PhD details below"}
-        </p>
-      </div>
-      
-      {apiError && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-red-700 animate-fade-in">
-          <p>{apiError}</p>
+          
         </div>
-      )}
-      
-      {renderForm()}
+        
+        {(!submitted || editMode) && (
+          <div className="flex justify-center gap-4 mt-8">
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="bg-gradient-to-r from-indigo-500 to-emerald-500 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg disabled:opacity-50"
+            >
+              {isLoading ? 'Saving...' : existingData ? 'Update' : 'Submit'}
+            </button>
+            
+            <button 
+              type="button"
+              onClick={toggleEditMode}
+              className="bg-transparent border-2 border-gray-200 text-gray-700 font-semibold py-3 px-8 rounded-lg transition-all duration-300 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </form>
     </div>
   );
 };
