@@ -2,17 +2,45 @@ import React, { useState, useEffect } from 'react';
 import PHDForm from './PHDForm';
 import axios from 'axios';
 
-interface EducationData {
+interface PivotedEducationData {
   id?: number;
   user_id?: number;
-  degree: string;
-  institution: string;
-  university: string;
-  medium: string;
-  specialization: string;
-  yearOfCompletion: string;
-  cgpa: string;
-  firstAttempt: string;
+  
+  // 10th
+  tenth_institution: string;
+  tenth_university: string;
+  tenth_medium: string;
+  tenth_specialization: string;
+  tenth_cgpa_percentage: string;
+  tenth_first_attempt: string;
+  tenth_year: string;
+  
+  // 12th
+  twelfth_institution: string;
+  twelfth_university: string;
+  twelfth_medium: string;
+  twelfth_specialization: string;
+  twelfth_cgpa_percentage: string;
+  twelfth_first_attempt: string;
+  twelfth_year: string;
+  
+  // UG
+  ug_institution: string;
+  ug_university: string;
+  ug_medium: string;
+  ug_specialization: string;
+  ug_cgpa_percentage: string;
+  ug_first_attempt: string;
+  ug_year: string;
+  
+  // PG
+  pg_institution: string;
+  pg_university: string;
+  pg_medium: string;
+  pg_specialization: string;
+  pg_cgpa_percentage: string;
+  pg_first_attempt: string;
+  pg_year: string;
 }
 
 interface FormErrors {
@@ -23,63 +51,66 @@ const EducationForm: React.FC = () => {
   // Assume user ID is available from context/props/local storage
   const userId = 1; // Replace with actual user ID retrieval
 
-  // Initialize with static rows for 10th, 12th, UG and PG
-  const [educationData, setEducationData] = useState<EducationData[]>([
-    {
-      degree: '10th',
-      institution: '',
-      university: '',
-      medium: '',
-      specialization: '',
-      yearOfCompletion: '',
-      cgpa: '',
-      firstAttempt: 'yes',
-    },
-    {
-      degree: '12th',
-      institution: '',
-      university: '',
-      medium: '',
-      specialization: '',
-      yearOfCompletion: '',
-      cgpa: '',
-      firstAttempt: 'yes',
-    },
-    {
-      degree: 'UG',
-      institution: '',
-      university: '',
-      medium: '',
-      specialization: '',
-      yearOfCompletion: '',
-      cgpa: '',
-      firstAttempt: 'yes',
-    },
-    {
-      degree: 'PG',
-      institution: '',
-      university: '',
-      medium: '',
-      specialization: '',
-      yearOfCompletion: '',
-      cgpa: '',
-      firstAttempt: 'yes',
-    },
-  ]);
+  // Initialize with empty fields for all education levels
+  const [educationData, setEducationData] = useState<PivotedEducationData>({
+    // 10th
+    tenth_institution: '',
+    tenth_university: '',
+    tenth_medium: '',
+    tenth_specialization: '',
+    tenth_cgpa_percentage: '',
+    tenth_first_attempt: 'yes',
+    tenth_year: '',
+    
+    // 12th
+    twelfth_institution: '',
+    twelfth_university: '',
+    twelfth_medium: '',
+    twelfth_specialization: '',
+    twelfth_cgpa_percentage: '',
+    twelfth_first_attempt: 'yes',
+    twelfth_year: '',
+    
+    // UG
+    ug_institution: '',
+    ug_university: '',
+    ug_medium: '',
+    ug_specialization: '',
+    ug_cgpa_percentage: '',
+    ug_first_attempt: 'yes',
+    ug_year: '',
+    
+    // PG
+    pg_institution: '',
+    pg_university: '',
+    pg_medium: '',
+    pg_specialization: '',
+    pg_cgpa_percentage: '',
+    pg_first_attempt: 'yes',
+    pg_year: '',
+  });
   
-  const [errors, setErrors] = useState<FormErrors[]>([{}, {}, {}, {}]);
-  const [focused, setFocused] = useState<{ index: number; field: string | null }>({ index: -1, field: null });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [focused, setFocused] = useState<string | null>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'education' | 'phd'>('education');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [animateForm, setAnimateForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState(false); // New state for edit mode
-  const [dataFetched, setDataFetched] = useState(false); // Track if data has been fetched
+  const [editMode, setEditMode] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
 
   const mediumOptions = ['Tamil', 'English', 'Hindi', 'Telugu', 'Malayalam', 'Kannada', 'Other'];
   const firstAttemptOptions = ['yes', 'no'];
+
+  // Define the education levels for iterating in the UI
+  const educationLevels = [
+    { title: '10th', prefix: 'tenth_' },
+    { title: '12th', prefix: 'twelfth_' },
+    { title: 'UG', prefix: 'ug_' },
+    { title: 'PG', prefix: 'pg_' }
+  ];
 
   useEffect(() => {
     // Delayed appearance animation
@@ -98,34 +129,10 @@ const EducationForm: React.FC = () => {
       
       const response = await axios.get(`http://localhost:5000/api/education/${userId}`);
       
-      if (response.data && response.data.length > 0) {
-        // Map API data to our form structure
-        const existingData = response.data;
-        const newEducationData = [...educationData];
-        console.log(newEducationData)
-        let hasData = false;
-        
-        existingData.forEach((item: any) => {
-          const index = newEducationData.findIndex(ed => ed.degree === item.degree);
-          if (index !== -1) {
-            hasData = true;
-            newEducationData[index] = {
-              ...newEducationData[index],
-              id: item.id,
-              institution: item.institution || '',
-              university: item.university || '',
-              medium: item.medium || '',
-              specialization: item.specialization || '',
-              yearOfCompletion: item.end_date ? item.end_date : '',
-              cgpa: item.cgpa_percentage || '',
-              firstAttempt: item.firstAttempt || 'yes',
-            };
-          }
-        });
-        
-        setEducationData(newEducationData);
-        setDataFetched(hasData); // Set dataFetched if we found any data
-        setEditMode(false); // Start in view mode when data is fetched
+      if (response.data && Object.keys(response.data).length > 0) {
+        setEducationData(response.data);
+        setDataFetched(true);
+        setEditMode(false);
       }
     } catch (error) {
       console.error('Error fetching education data:', error);
@@ -136,77 +143,59 @@ const EducationForm: React.FC = () => {
   };
 
   // Validation function
-  // Validation function
-const validateField = (name: string, value: any): string => {
-  // Convert value to string safely before using trim()
-  const strValue = value !== null && value !== undefined ? String(value) : '';
-  
-  switch (name) {
-    case 'institution':
-    case 'university':
-    case 'medium':
-      return strValue.trim() === '' ? `${name.charAt(0).toUpperCase() + name.slice(1)} is required` : '';
-    case 'specialization':
-      return strValue.trim() === '' ? 'Specialization is required' : '';
-    case 'yearOfCompletion':
-      const yearRegex = /^\d{4}$/;
-      if (strValue.trim() === '') return 'Year of completion is required';
-      if (!yearRegex.test(strValue)) return 'Please enter a valid 4-digit year';
-      const year = parseInt(strValue, 10);
-      const currentYear = new Date().getFullYear();
-      if (year < 1950 || year > currentYear) return `Year must be between 1950 and ${currentYear}`;
-      return '';
-    case 'cgpa':
-      const percentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)%?$/;
-      const cgpaRegex = /^(10(\.0{1,2})?|[0-9](\.\d{1,2})?)$/;
-      if (strValue.trim() === '') return 'CGPA/Percentage is required';
-      if (!percentageRegex.test(strValue) && !cgpaRegex.test(strValue)) 
-        return 'Enter valid percentage (0-100%) or CGPA (0-10)';
-      return '';
-    case 'firstAttempt':
-      return strValue.trim() === '' ? 'Please select Yes/No' : '';
-    default:
-      return '';
-  }
-};
+  const validateField = (name: string, value: any): string => {
+    // Convert value to string safely before using trim()
+    const strValue = value !== null && value !== undefined ? String(value) : '';
+    
+    // Extract the field type from the name (e.g., 'institution' from 'tenth_institution')
+    const fieldType = name.split('_').slice(1).join('_');
+    
+    switch (fieldType) {
+      case 'institution':
+      case 'university':
+      case 'medium':
+        return strValue.trim() === '' ? `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} is required` : '';
+      case 'specialization':
+        return strValue.trim() === '' ? 'Specialization is required' : '';
+      case 'year':
+        const yearRegex = /^\d{4}$/;
+        if (strValue.trim() === '') return 'Year of completion is required';
+        if (!yearRegex.test(strValue)) return 'Please enter a valid 4-digit year';
+        const year = parseInt(strValue, 10);
+        const currentYear = new Date().getFullYear();
+        if (year < 1950 || year > currentYear) return `Year must be between 1950 and ${currentYear}`;
+        return '';
+      case 'cgpa_percentage':
+        const percentageRegex = /^(100(\.0{1,2})?|[1-9]?\d(\.\d{1,2})?)%?$/;
+        const cgpaRegex = /^(10(\.0{1,2})?|[0-9](\.\d{1,2})?)$/;
+        if (strValue.trim() === '') return 'CGPA/Percentage is required';
+        if (!percentageRegex.test(strValue) && !cgpaRegex.test(strValue)) 
+          return 'Enter valid percentage (0-100%) or CGPA (0-10)';
+        return '';
+      case 'first_attempt':
+        return strValue.trim() === '' ? 'Please select Yes/No' : '';
+      default:
+        return '';
+    }
+  };
 
   // Handle input changes
-  const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const newEducationData = [...educationData];
-    newEducationData[index] = { ...newEducationData[index], [name]: value };
-    setEducationData(newEducationData);
+    setEducationData(prev => ({ ...prev, [name]: value }));
     
     const errorMessage = validateField(name, value);
-    const newErrors = [...errors];
-    newErrors[index] = { ...newErrors[index], [name]: errorMessage };
-    setErrors(newErrors);
+    setErrors(prev => ({ ...prev, [name]: errorMessage }));
   };
 
   // Handle field focus
-  const handleFocus = (index: number, field: string) => {
-    setFocused({ index, field });
+  const handleFocus = (field: string) => {
+    setFocused(field);
   };
 
   // Handle field blur
   const handleBlur = () => {
-    setFocused({ index: -1, field: null });
-  };
-
-  // Format education data for API
-  const formatDataForApi = (data: EducationData) => {
-    return {
-      user_id: userId,
-      degree: data.degree,
-      institution: data.institution,
-      university: data.university,
-      medium: data.medium,
-      specialization: data.specialization,
-      start_date: null, // Not used in your form but required by API
-      end_date: `${data.yearOfCompletion}`, // Approximating graduation date
-      grade: data.cgpa, // Ensure the field name matches what backend expects
-      firstAttempt: data.firstAttempt,
-    };
+    setFocused(null);
   };
 
   // Toggle edit mode
@@ -224,19 +213,18 @@ const validateField = (name: string, value: any): string => {
     
     // Validate all fields
     let isValid = true;
-    const newErrors = educationData.map(education => {
-      const formErrors: FormErrors = {};
-      Object.entries(education).forEach(([key, value]) => {
-        // Skip validation for degree as it's pre-set
-        if (key !== 'degree' && key !== 'id' && key !== 'user_id') {
-          const errorMessage = validateField(key, value as string);
-          if (errorMessage) {
-            formErrors[key] = errorMessage;
-            isValid = false;
-          }
+    const newErrors: FormErrors = {};
+    
+    // For each education level, validate all fields
+    educationLevels.forEach(level => {
+      ['institution', 'university', 'medium', 'specialization', 'cgpa_percentage', 'first_attempt', 'year'].forEach(field => {
+        const fieldName = `${level.prefix}${field}`;
+        const errorMessage = validateField(fieldName, educationData[fieldName as keyof PivotedEducationData]);
+        if (errorMessage) {
+          newErrors[fieldName] = errorMessage;
+          isValid = false;
         }
       });
-      return formErrors;
     });
     
     setErrors(newErrors);
@@ -246,22 +234,15 @@ const validateField = (name: string, value: any): string => {
       setApiError(null);
       
       try {
-        // Process each education record
-        const apiPromises = educationData.map(async (education) => {
-          const formattedData = formatDataForApi(education);
-          console.log("Submitting data:", formattedData);
-          
-          if (education.id) {
-            // Update existing record
-            console.log(`PUT request to http://localhost:5000/api/education/${education.id}`);
-            return axios.put(`http://localhost:5000/api/education/${education.id}`, formattedData);
-          } else {
-            // Create new record
-            return axios.post('http://localhost:5000/api/education', formattedData);
-          }
-        });
+        // Include user_id in the submission data
+        const formData = {
+          user_id: userId,
+          ...educationData
+        };
         
-        await Promise.all(apiPromises);
+        // Post data to the API
+        await axios.post('http://localhost:5000/api/education', formData);
+        
         console.log('Education data submitted successfully');
         setIsSubmitted(true);
         setEditMode(false); // Return to view mode after successful submission
@@ -287,19 +268,19 @@ const validateField = (name: string, value: any): string => {
   };
 
   // Helper function to get form group classes
-  const getFormGroupClasses = (index: number, fieldName: string, delay: number) => {
+  const getFormGroupClasses = (fieldName: string, delay: number) => {
     let baseClasses = "transition-all duration-300 mb-4";
     
     // Add animation delay for staggered entrance
     const delayStyle = { animationDelay: `${delay * 0.1}s` };
     
     // Add error class if there's an error
-    if (errors[index] && errors[index][fieldName]) {
+    if (errors[fieldName]) {
       baseClasses += " error-field";
     }
     
     // Add focus class
-    if (focused.index === index && focused.field === fieldName) {
+    if (focused === fieldName) {
       baseClasses += " text-indigo-600 font-semibold";
     }
     
@@ -310,7 +291,7 @@ const validateField = (name: string, value: any): string => {
   };
 
   // Helper function to get input classes
-  const getInputClasses = (index: number, fieldName: string) => {
+  const getInputClasses = (fieldName: string) => {
     let baseClasses = "w-full px-3 py-3 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
     
     // Add disabled styling if not in edit mode and data has been fetched
@@ -319,7 +300,7 @@ const validateField = (name: string, value: any): string => {
     }
     
     // Add error styling if there's an error
-    if (errors[index] && errors[index][fieldName]) {
+    if (errors[fieldName]) {
       baseClasses += " border-red-500 bg-red-50";
     }
     
@@ -383,54 +364,54 @@ const validateField = (name: string, value: any): string => {
           )}
           
           <form onSubmit={handleSubmit}>
-            {educationData.map((education, index) => (
-              <div key={index} className="mb-8 p-4 border-l-4 border-indigo-500 bg-gray-50 rounded-md">
-                <h3 className="text-xl font-bold mb-4">{education.degree} Education</h3>
+            {educationLevels.map((level, levelIndex) => (
+              <div key={level.title} className="mb-8 p-4 border-l-4 border-indigo-500 bg-gray-50 rounded-md">
+                <h3 className="text-xl font-bold mb-4">{level.title} Education</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div {...getFormGroupClasses(index, 'institution', 0)}>
+                  <div {...getFormGroupClasses(`${level.prefix}institution`, levelIndex * 7 + 0)}>
                     <label className="block mb-1 font-medium">Institution Name</label>
                     <input
                       type="text"
-                      name="institution"
-                      value={education.institution}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'institution')}
+                      name={`${level.prefix}institution`}
+                      value={educationData[`${level.prefix}institution` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}institution`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'institution')}
+                      className={getInputClasses(`${level.prefix}institution`)}
                       disabled={dataFetched && !editMode}
                     />
-                    {errors[index]?.institution && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].institution}</p>
+                    {errors[`${level.prefix}institution`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}institution`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'university', 1)}>
+                  <div {...getFormGroupClasses(`${level.prefix}university`, levelIndex * 7 + 1)}>
                     <label className="block mb-1 font-medium">University/Board</label>
                     <input
                       type="text"
-                      name="university"
-                      value={education.university}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'university')}
+                      name={`${level.prefix}university`}
+                      value={educationData[`${level.prefix}university` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}university`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'university')}
+                      className={getInputClasses(`${level.prefix}university`)}
                       disabled={dataFetched && !editMode}
                     />
-                    {errors[index]?.university && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].university}</p>
+                    {errors[`${level.prefix}university`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}university`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'medium', 2)}>
+                  <div {...getFormGroupClasses(`${level.prefix}medium`, levelIndex * 7 + 2)}>
                     <label className="block mb-1 font-medium">Medium of Instruction</label>
                     <select
-                      name="medium"
-                      value={education.medium}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'medium')}
+                      name={`${level.prefix}medium`}
+                      value={educationData[`${level.prefix}medium` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}medium`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'medium')}
+                      className={getInputClasses(`${level.prefix}medium`)}
                       disabled={dataFetched && !editMode}
                     >
                       <option value="">Select medium</option>
@@ -438,81 +419,81 @@ const validateField = (name: string, value: any): string => {
                         <option key={option} value={option}>{option}</option>
                       ))}
                     </select>
-                    {errors[index]?.medium && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].medium}</p>
+                    {errors[`${level.prefix}medium`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}medium`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'specialization', 3)}>
+                  <div {...getFormGroupClasses(`${level.prefix}specialization`, levelIndex * 7 + 3)}>
                     <label className="block mb-1 font-medium">Specialization</label>
                     <input
                       type="text"
-                      name="specialization"
-                      value={education.specialization}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'specialization')}
+                      name={`${level.prefix}specialization`}
+                      value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}specialization`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'specialization')}
+                      className={getInputClasses(`${level.prefix}specialization`)}
                       disabled={dataFetched && !editMode}
                     />
-                    {errors[index]?.specialization && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].specialization}</p>
+                    {errors[`${level.prefix}specialization`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}specialization`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'yearOfCompletion', 4)}>
+                  <div {...getFormGroupClasses(`${level.prefix}year`, levelIndex * 7 + 4)}>
                     <label className="block mb-1 font-medium">Year of Completion</label>
                     <input
                       type="text"
-                      name="yearOfCompletion"
-                      value={education.yearOfCompletion}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'yearOfCompletion')}
+                      name={`${level.prefix}year`}
+                      value={educationData[`${level.prefix}year` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}year`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'yearOfCompletion')}
+                      className={getInputClasses(`${level.prefix}year`)}
                       placeholder="YYYY"
                       disabled={dataFetched && !editMode}
                     />
-                    {errors[index]?.yearOfCompletion && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].yearOfCompletion}</p>
+                    {errors[`${level.prefix}year`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}year`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'cgpa', 5)}>
+                  <div {...getFormGroupClasses(`${level.prefix}cgpa_percentage`, levelIndex * 7 + 5)}>
                     <label className="block mb-1 font-medium">CGPA/Percentage</label>
                     <input
                       type="text"
-                      name="cgpa"
-                      value={education.cgpa}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'cgpa')}
+                      name={`${level.prefix}cgpa_percentage`}
+                      value={educationData[`${level.prefix}cgpa_percentage` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}cgpa_percentage`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'cgpa')}
+                      className={getInputClasses(`${level.prefix}cgpa_percentage`)}
                       placeholder="e.g., 8.5 or 85%"
                       disabled={dataFetched && !editMode}
                     />
-                    {errors[index]?.cgpa && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].cgpa}</p>
+                    {errors[`${level.prefix}cgpa_percentage`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}cgpa_percentage`]}</p>
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(index, 'firstAttempt', 6)}>
+                  <div {...getFormGroupClasses(`${level.prefix}first_attempt`, levelIndex * 7 + 6)}>
                     <label className="block mb-1 font-medium">Passed in First Attempt?</label>
                     <select
-                      name="firstAttempt"
-                      value={education.firstAttempt}
-                      onChange={(e) => handleChange(index, e)}
-                      onFocus={() => handleFocus(index, 'firstAttempt')}
+                      name={`${level.prefix}first_attempt`}
+                      value={educationData[`${level.prefix}first_attempt` as keyof PivotedEducationData] as string}
+                      onChange={handleChange}
+                      onFocus={() => handleFocus(`${level.prefix}first_attempt`)}
                       onBlur={handleBlur}
-                      className={getInputClasses(index, 'firstAttempt')}
+                      className={getInputClasses(`${level.prefix}first_attempt`)}
                       disabled={dataFetched && !editMode}
                     >
                       {firstAttemptOptions.map(option => (
                         <option key={option} value={option}>{option === 'yes' ? 'Yes' : 'No'}</option>
                       ))}
                     </select>
-                    {errors[index]?.firstAttempt && (
-                      <p className="text-red-500 text-sm mt-1">{errors[index].firstAttempt}</p>
+                    {errors[`${level.prefix}first_attempt`] && (
+                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}first_attempt`]}</p>
                     )}
                   </div>
                 </div>
