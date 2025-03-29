@@ -21,8 +21,10 @@ router.get("/:user_id", (req, res) => {
 // Add or Insert user education (Upsert)
 router.post("/", (req, res) => {
     const { user_id } = req.body;
-console.log(req.body)
-    // destructuring all values
+
+    console.log(req.body);
+
+    // Destructuring all values
     const {
         // 10th
         tenth_institution, tenth_university, tenth_medium, tenth_specialization, tenth_cgpa_percentage, tenth_first_attempt, tenth_year,
@@ -31,39 +33,45 @@ console.log(req.body)
         twelfth_institution, twelfth_university, twelfth_medium, twelfth_specialization, twelfth_cgpa_percentage, twelfth_first_attempt, twelfth_year,
 
         // UG
-        ug_institution, ug_university, ug_medium, ug_specialization, ug_cgpa_percentage, ug_first_attempt, ug_year,
+        ug_institution, ug_university, ug_medium, ug_specialization, ug_degree, ug_cgpa_percentage, ug_first_attempt, ug_year,
 
         // PG
-        pg_institution, pg_university, pg_medium, pg_specialization, pg_cgpa_percentage, pg_first_attempt, pg_year
+        pg_institution, pg_university, pg_medium, pg_specialization, pg_degree, pg_cgpa_percentage, pg_first_attempt, pg_year,
+
+        // M.Phil
+        mphil_institution, mphil_university, mphil_medium, mphil_specialization, mphil_degree, mphil_cgpa_percentage, mphil_first_attempt, mphil_year
     } = req.body;
 
-    // Upsert pattern (insert or update if exists)
-    db.query(
-        `INSERT INTO user_education 
+    const sql = `
+        INSERT INTO user_education 
         (user_id, 
         tenth_institution, tenth_university, tenth_medium, tenth_specialization, tenth_cgpa_percentage, tenth_first_attempt, tenth_year,
         twelfth_institution, twelfth_university, twelfth_medium, twelfth_specialization, twelfth_cgpa_percentage, twelfth_first_attempt, twelfth_year,
-        ug_institution, ug_university, ug_medium, ug_specialization, ug_cgpa_percentage, ug_first_attempt, ug_year,
-        pg_institution, pg_university, pg_medium, pg_specialization, pg_cgpa_percentage, pg_first_attempt, pg_year)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+        ug_institution, ug_university, ug_medium, ug_specialization, ug_degree, ug_cgpa_percentage, ug_first_attempt, ug_year,
+        pg_institution, pg_university, pg_medium, pg_specialization, pg_degree, pg_cgpa_percentage, pg_first_attempt, pg_year,
+        mphil_institution, mphil_university, mphil_medium, mphil_specialization, mphil_degree, mphil_cgpa_percentage, mphil_first_attempt, mphil_year)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
         tenth_institution=VALUES(tenth_institution), tenth_university=VALUES(tenth_university), tenth_medium=VALUES(tenth_medium), tenth_specialization=VALUES(tenth_specialization), tenth_cgpa_percentage=VALUES(tenth_cgpa_percentage), tenth_first_attempt=VALUES(tenth_first_attempt), tenth_year=VALUES(tenth_year),
         twelfth_institution=VALUES(twelfth_institution), twelfth_university=VALUES(twelfth_university), twelfth_medium=VALUES(twelfth_medium), twelfth_specialization=VALUES(twelfth_specialization), twelfth_cgpa_percentage=VALUES(twelfth_cgpa_percentage), twelfth_first_attempt=VALUES(twelfth_first_attempt), twelfth_year=VALUES(twelfth_year),
-        ug_institution=VALUES(ug_institution), ug_university=VALUES(ug_university), ug_medium=VALUES(ug_medium), ug_specialization=VALUES(ug_specialization), ug_cgpa_percentage=VALUES(ug_cgpa_percentage), ug_first_attempt=VALUES(ug_first_attempt), ug_year=VALUES(ug_year),
-        pg_institution=VALUES(pg_institution), pg_university=VALUES(pg_university), pg_medium=VALUES(pg_medium), pg_specialization=VALUES(pg_specialization), pg_cgpa_percentage=VALUES(pg_cgpa_percentage), pg_first_attempt=VALUES(pg_first_attempt), pg_year=VALUES(pg_year)
-        `,
-        [
-            user_id,
-            tenth_institution, tenth_university, tenth_medium, tenth_specialization, tenth_cgpa_percentage, tenth_first_attempt, tenth_year,
-            twelfth_institution, twelfth_university, twelfth_medium, twelfth_specialization, twelfth_cgpa_percentage, twelfth_first_attempt, twelfth_year,
-            ug_institution, ug_university, ug_medium, ug_specialization, ug_cgpa_percentage, ug_first_attempt, ug_year,
-            pg_institution, pg_university, pg_medium, pg_specialization, pg_cgpa_percentage, pg_first_attempt, pg_year
-        ],
-        (err, results) => {
-            if (err) return res.status(400).json({ error: err.message });
-            res.json({ message: "Education record inserted/updated successfully" });
-        }
-    );
+        ug_institution=VALUES(ug_institution), ug_university=VALUES(ug_university), ug_medium=VALUES(ug_medium), ug_specialization=VALUES(ug_specialization), ug_degree=VALUES(ug_degree), ug_cgpa_percentage=VALUES(ug_cgpa_percentage), ug_first_attempt=VALUES(ug_first_attempt), ug_year=VALUES(ug_year),
+        pg_institution=VALUES(pg_institution), pg_university=VALUES(pg_university), pg_medium=VALUES(pg_medium), pg_specialization=VALUES(pg_specialization), pg_degree=VALUES(pg_degree), pg_cgpa_percentage=VALUES(pg_cgpa_percentage), pg_first_attempt=VALUES(pg_first_attempt), pg_year=VALUES(pg_year),
+        mphil_institution=VALUES(mphil_institution), mphil_university=VALUES(mphil_university), mphil_medium=VALUES(mphil_medium), mphil_specialization=VALUES(mphil_specialization), mphil_degree=VALUES(mphil_degree), mphil_cgpa_percentage=VALUES(mphil_cgpa_percentage), mphil_first_attempt=VALUES(mphil_first_attempt), mphil_year=VALUES(mphil_year)
+    `;
+
+    const values = [
+        user_id,
+        tenth_institution, tenth_university, tenth_medium, tenth_specialization, tenth_cgpa_percentage, tenth_first_attempt, tenth_year,
+        twelfth_institution, twelfth_university, twelfth_medium, twelfth_specialization, twelfth_cgpa_percentage, twelfth_first_attempt, twelfth_year,
+        ug_institution, ug_university, ug_medium, ug_specialization, ug_degree, ug_cgpa_percentage, ug_first_attempt, ug_year,
+        pg_institution, pg_university, pg_medium, pg_specialization, pg_degree, pg_cgpa_percentage, pg_first_attempt, pg_year,
+        mphil_institution, mphil_university, mphil_medium, mphil_specialization, mphil_degree, mphil_cgpa_percentage, mphil_first_attempt, mphil_year
+    ];
+
+    db.query(sql, values, (err, results) => {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: "Education record inserted/updated successfully" });
+    });
 });
 
 // Delete education record (per user)
