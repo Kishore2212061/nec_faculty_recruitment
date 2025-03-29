@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Building2, Briefcase, DollarSign, Plus, Save, Pencil, Trash2, AlertCircle } from 'lucide-react';
+import { Calendar, Building2, Briefcase, DollarSign, Plus, Save, Pencil, Trash2, AlertCircle, ArrowUp, ArrowDown, Check } from 'lucide-react';
 
 interface Experience {
   id?: number;
@@ -122,6 +122,28 @@ export default function ExperienceForm({ userId }: Props) {
     );
   };
 
+  const moveExperience = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === experiences.length - 1) return;
+
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const updatedExperiences = [...experiences];
+    const temp = updatedExperiences[index];
+    updatedExperiences[index] = updatedExperiences[newIndex];
+    updatedExperiences[newIndex] = temp;
+    
+    setExperiences(updatedExperiences);
+    
+    // Update errors indices as well
+    if (errors[index] || errors[newIndex]) {
+      const newErrors = {...errors};
+      const tempError = newErrors[index];
+      newErrors[index] = newErrors[newIndex];
+      newErrors[newIndex] = tempError;
+      setErrors(newErrors);
+    }
+  };
+
   const handleSave = async () => {
     setFormSubmitted(true);
     
@@ -152,222 +174,249 @@ export default function ExperienceForm({ userId }: Props) {
           </div>
 
           <div className="p-6">
-            {experiences.map((exp, idx) => (
-              <div key={idx} 
-                className="mb-6 last:mb-0 bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md">
-                <div className="p-5">
-                  {exp.isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Experience Type <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="experienceType"
-                            value={exp.experienceType}
-                            onChange={(e) => handleChange(idx, e)}
-                            className={`w-full px-3 py-2 border ${
-                              errors[idx]?.experienceType ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                            } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                            required
-                          >
-                            <option value="">Select Type</option>
-                            <option value="Teaching">Teaching</option>
-                            <option value="Industry">Industry</option>
-                          </select>
-                          {errors[idx]?.experienceType && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Organization <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <Building2 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                              name="organization"
-                              placeholder="Organization name"
-                              value={exp.organization}
-                              onChange={(e) => handleChange(idx, e)}
-                              className={`w-full pl-10 pr-3 py-2 border ${
-                                errors[idx]?.organization ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                              } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                              required
-                            />
+            {experiences.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-8"></th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Experience Type</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Organization</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Post Held</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Salary</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Duration</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {experiences.map((exp, idx) => (
+                      <tr key={idx} 
+                          className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${exp.isEditing ? 'bg-blue-50' : ''}`}>
+                        {/* Move Up/Down controls */}
+                        <td className="px-2 py-3 text-gray-700 align-middle">
+                          <div className="flex flex-col gap-1">
+                            <button 
+                              onClick={() => moveExperience(idx, 'up')}
+                              disabled={idx === 0}
+                              className={`p-1 rounded ${idx === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}`}>
+                              <ArrowUp className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => moveExperience(idx, 'down')}
+                              disabled={idx === experiences.length - 1}
+                              className={`p-1 rounded ${idx === experiences.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'}`}>
+                              <ArrowDown className="w-4 h-4" />
+                            </button>
                           </div>
-                          {errors[idx]?.organization && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
-                          )}
-                        </div>
+                        </td>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Post Held <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            name="postHeld"
-                            placeholder="Position title"
-                            value={exp.postHeld}
-                            onChange={(e) => handleChange(idx, e)}
-                            className={`w-full px-3 py-2 border ${
-                              errors[idx]?.postHeld ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                            } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                            required
-                          />
-                          {errors[idx]?.postHeld && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
+                        {/* Experience Type */}
+                        <td className="px-4 py-3">
+                          {exp.isEditing ? (
+                            <div>
+                              <select
+                                name="experienceType"
+                                value={exp.experienceType}
+                                onChange={(e) => handleChange(idx, e)}
+                                className={`w-full px-3 py-2 border ${
+                                  errors[idx]?.experienceType ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                required
+                              >
+                                <option value="">Select Type</option>
+                                <option value="Teaching">Teaching</option>
+                                <option value="Industry">Industry</option>
+                              </select>
+                              {errors[idx]?.experienceType && (
+                                <p className="mt-1 text-sm text-red-600 flex items-center">
+                                  <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span>{exp.experienceType || '—'}</span>
                           )}
-                        </div>
-                      </div>
+                        </td>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Salary Drawn <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                              name="salaryDrawn"
-                              placeholder="Annual salary"
-                              value={exp.salaryDrawn}
-                              onChange={(e) => handleChange(idx, e)}
-                              className={`w-full pl-10 pr-3 py-2 border ${
-                                errors[idx]?.salaryDrawn ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                              } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                              required
-                            />
+                        {/* Organization */}
+                        <td className="px-4 py-3">
+                          {exp.isEditing ? (
+                            <div>
+                              <div className="relative">
+                                <Building2 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <input
+                                  name="organization"
+                                  placeholder="Organization"
+                                  value={exp.organization}
+                                  onChange={(e) => handleChange(idx, e)}
+                                  className={`w-full pl-10 pr-3 py-2 border ${
+                                    errors[idx]?.organization ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                  } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                  required
+                                />
+                              </div>
+                              {errors[idx]?.organization && (
+                                <p className="mt-1 text-sm text-red-600 flex items-center">
+                                  <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-gray-400" />
+                              <span>{exp.organization || '—'}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Post Held */}
+                        <td className="px-4 py-3">
+                          {exp.isEditing ? (
+                            <div>
+                              <input
+                                name="postHeld"
+                                placeholder="Position"
+                                value={exp.postHeld}
+                                onChange={(e) => handleChange(idx, e)}
+                                className={`w-full px-3 py-2 border ${
+                                  errors[idx]?.postHeld ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                required
+                              />
+                              {errors[idx]?.postHeld && (
+                                <p className="mt-1 text-sm text-red-600 flex items-center">
+                                  <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span>{exp.postHeld || '—'}</span>
+                          )}
+                        </td>
+
+                        {/* Salary */}
+                        <td className="px-4 py-3">
+                          {exp.isEditing ? (
+                            <div>
+                              <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <input
+                                  name="salaryDrawn"
+                                  placeholder="Salary"
+                                  value={exp.salaryDrawn}
+                                  onChange={(e) => handleChange(idx, e)}
+                                  className={`w-full pl-10 pr-3 py-2 border ${
+                                    errors[idx]?.salaryDrawn ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                  } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                  required
+                                />
+                              </div>
+                              {errors[idx]?.salaryDrawn && (
+                                <p className="mt-1 text-sm text-red-600 flex items-center">
+                                  <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="w-4 h-4 text-gray-400" />
+                              <span>{exp.salaryDrawn || '—'}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Duration */}
+                        <td className="px-4 py-3">
+                          {exp.isEditing ? (
+                            <div className="space-y-2">
+                              <div>
+                                <div className="relative">
+                                  <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                  <input
+                                    name="fromDate"
+                                    type="date"
+                                    value={exp.fromDate}
+                                    onChange={(e) => handleChange(idx, e)}
+                                    className={`w-full pl-10 pr-3 py-2 border ${
+                                      errors[idx]?.fromDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                    } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                    required
+                                  />
+                                </div>
+                                {errors[idx]?.fromDate && (
+                                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                  </p>
+                                )}
+                              </div>
+                              <div>
+                                <div className="relative">
+                                  <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                  <input
+                                    name="toDate"
+                                    type="date"
+                                    value={exp.toDate}
+                                    onChange={(e) => handleChange(idx, e)}
+                                    className={`w-full pl-10 pr-3 py-2 border ${
+                                      errors[idx]?.toDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
+                                    } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                    required
+                                  />
+                                </div>
+                                {errors[idx]?.toDate && (
+                                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-4 h-4 mr-1" /> Required
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <span>{exp.fromDate} — {exp.toDate || 'Present'}</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center gap-1">
+                            <button
+                              onClick={() => toggleEdit(idx)}
+                              className={`p-2 rounded-md text-sm font-medium transition-colors
+                                ${exp.isEditing 
+                                  ? 'bg-green-600 text-white hover:bg-green-700' 
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                              title={exp.isEditing ? "Save changes" : "Edit"}
+                            >
+                              {exp.isEditing ? (
+                                <Check className="w-4 h-4" />
+                              ) : (
+                                <Pencil className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => deleteExperience(idx)}
+                              className="p-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          {errors[idx]?.salaryDrawn && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            From Date <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                              name="fromDate"
-                              type="date"
-                              value={exp.fromDate}
-                              onChange={(e) => handleChange(idx, e)}
-                              className={`w-full pl-10 pr-3 py-2 border ${
-                                errors[idx]?.fromDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                              } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                              required
-                            />
-                          </div>
-                          {errors[idx]?.fromDate && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            To Date <span className="text-red-500">*</span>
-                          </label>
-                          <div className="relative">
-                            <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                              name="toDate"
-                              type="date"
-                              value={exp.toDate}
-                              onChange={(e) => handleChange(idx, e)}
-                              className={`w-full pl-10 pr-3 py-2 border ${
-                                errors[idx]?.toDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300'
-                              } rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                              required
-                            />
-                          </div>
-                          {errors[idx]?.toDate && (
-                            <p className="mt-1 text-sm text-red-600 flex items-center">
-                              <AlertCircle className="w-4 h-4 mr-1" /> Required field
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500">Experience Type</span>
-                          <p className="text-gray-900 mt-1">{exp.experienceType || '—'}</p>
-                        </div>
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500">Organization</span>
-                          <p className="text-gray-900 mt-1 flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-gray-400" />
-                            {exp.organization || '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-500">Post Held</span>
-                          <p className="text-gray-900 mt-1">{exp.postHeld || '—'}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500">Salary Drawn</span>
-                          <p className="text-gray-900 mt-1 flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-gray-400" />
-                            {exp.salaryDrawn || '—'}
-                          </p>
-                        </div>
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-500">Duration</span>
-                          <p className="text-gray-900 mt-1 flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            {exp.fromDate} - {exp.toDate || 'Present'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-                  <button
-                    onClick={() => toggleEdit(idx)}
-                    className={`inline-flex items-center gap-1 px-4 py-2 rounded-md text-sm font-medium transition-colors
-                      ${exp.isEditing 
-                        ? 'bg-green-600 text-white hover:bg-green-700' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                  >
-                    {exp.isEditing ? (
-                      <>Done</>
-                    ) : (
-                      <><Pencil className="w-4 h-4" /> Edit</>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => deleteExperience(idx)}
-                    className="inline-flex items-center gap-1 px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete
-                  </button>
-                </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-10 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-500">No experience records found. Add your first experience.</p>
+              </div>
+            )}
 
             {experiences.length === 0 && formSubmitted && (
-              <div className="p-4 bg-red-50 text-red-700 rounded-md mb-4 flex items-center">
+              <div className="p-4 bg-red-50 text-red-700 rounded-md mt-4 flex items-center">
                 <AlertCircle className="w-5 h-5 mr-2" />
                 Please add at least one experience record
               </div>
