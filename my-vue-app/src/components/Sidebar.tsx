@@ -35,7 +35,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const menuItems = [
     {
       path: '/dashboard',
-      name: 'Dashboard',
+      name: 'Instruction',
       icon: <Home size={20} />
     },
     {
