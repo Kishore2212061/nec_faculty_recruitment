@@ -60,7 +60,6 @@ body {
   font-weight: 700;
   margin-bottom: 0.5rem;
   background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

@@ -1,20 +1,19 @@
-import { db } from '../config/db.js';  // Adjust path based on your structure
+import { db } from '../config/db.js'; // Adjust path as needed
 
 // ✅ Store Personal Data with Photo as Binary (BLOB)
 export const savePersonal = (req, res) => {
   const userId = req.params.userId;
   const data = req.body;
-  const photoBuffer = req.file ? req.file.buffer : null;  // Store as binary
+  const photoBuffer = req.file ? req.file.buffer : null; // Store photo as binary
 
   const sql = `
     INSERT INTO personal (
-      userId, fullName, referenceNumber, dateOfBirth, age, gender,
+      userId, fullName, dateOfBirth, age, gender,
       communicationAddress, permanentAddress, religion, community, caste,
       email, mobileNumber, post, department, appliedDate, photo
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       fullName = VALUES(fullName),
-      referenceNumber = VALUES(referenceNumber),
       dateOfBirth = VALUES(dateOfBirth),
       age = VALUES(age),
       gender = VALUES(gender),
@@ -34,7 +33,6 @@ export const savePersonal = (req, res) => {
   db.query(sql, [
     userId,
     data.fullName,
-    data.referenceNumber,
     data.dateOfBirth,
     data.age,
     data.gender,
@@ -51,14 +49,14 @@ export const savePersonal = (req, res) => {
     photoBuffer
   ], (err, result) => {
     if (err) {
-      console.error(err);
+      console.error('Save Error:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     res.json({ message: 'Personal Data Saved/Updated ✅' });
   });
 };
 
-// ✅ Get Personal Data with Image (convert BLOB to base64 if needed)
+// ✅ Get Personal Data with Image (BLOB converted to base64)
 export const getPersonal = (req, res) => {
   const userId = req.params.userId;
 
@@ -66,7 +64,7 @@ export const getPersonal = (req, res) => {
 
   db.query(sql, [userId], (err, result) => {
     if (err) {
-      console.error(err);
+      console.error('Fetch Error:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     if (result.length === 0) {
@@ -75,7 +73,7 @@ export const getPersonal = (req, res) => {
 
     const personalData = result[0];
 
-    // Convert BLOB to base64 string for frontend rendering
+    // ✅ Convert photo BLOB to base64 for frontend image rendering
     if (personalData.photo) {
       personalData.photo = personalData.photo.toString('base64');
     }
