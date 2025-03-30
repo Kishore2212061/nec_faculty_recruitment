@@ -10,7 +10,6 @@ interface PivotedEducationData {
   tenth_institution: string;
   tenth_university: string;
   tenth_medium: string;
-  tenth_specialization: string;
   tenth_cgpa_percentage: string;
   tenth_first_attempt: string;
   tenth_year: string;
@@ -19,7 +18,6 @@ interface PivotedEducationData {
   twelfth_institution: string;
   twelfth_university: string;
   twelfth_medium: string;
-  twelfth_specialization: string;
   twelfth_cgpa_percentage: string;
   twelfth_first_attempt: string;
   twelfth_year: string;
@@ -29,6 +27,7 @@ interface PivotedEducationData {
   ug_university: string;
   ug_medium: string;
   ug_specialization: string;
+  ug_degree: string;
   ug_cgpa_percentage: string;
   ug_first_attempt: string;
   ug_year: string;
@@ -38,9 +37,20 @@ interface PivotedEducationData {
   pg_university: string;
   pg_medium: string;
   pg_specialization: string;
+  pg_degree: string;
   pg_cgpa_percentage: string;
   pg_first_attempt: string;
   pg_year: string;
+  
+  // M.Phil
+  mphil_institution: string;
+  mphil_university: string;
+  mphil_medium: string;
+  mphil_specialization: string;
+  mphil_degree: string;
+  mphil_cgpa_percentage: string;
+  mphil_first_attempt: string;
+  mphil_year: string;
 }
 
 interface FormErrors {
@@ -49,15 +59,14 @@ interface FormErrors {
 
 const EducationForm: React.FC = () => {
   // Assume user ID is available from context/props/local storage
-  const userId = 1; // Replace with actual user ID retrieval
+  const userId = localStorage.getItem('userId');
 
   // Initialize with empty fields for all education levels
-  const [educationData, setEducationData] = useState<PivotedEducationData>({
+  const initialFormState: PivotedEducationData = {
     // 10th
     tenth_institution: '',
     tenth_university: '',
     tenth_medium: '',
-    tenth_specialization: '',
     tenth_cgpa_percentage: '',
     tenth_first_attempt: 'yes',
     tenth_year: '',
@@ -66,7 +75,6 @@ const EducationForm: React.FC = () => {
     twelfth_institution: '',
     twelfth_university: '',
     twelfth_medium: '',
-    twelfth_specialization: '',
     twelfth_cgpa_percentage: '',
     twelfth_first_attempt: 'yes',
     twelfth_year: '',
@@ -76,6 +84,7 @@ const EducationForm: React.FC = () => {
     ug_university: '',
     ug_medium: '',
     ug_specialization: '',
+    ug_degree: '',
     ug_cgpa_percentage: '',
     ug_first_attempt: 'yes',
     ug_year: '',
@@ -85,11 +94,23 @@ const EducationForm: React.FC = () => {
     pg_university: '',
     pg_medium: '',
     pg_specialization: '',
+    pg_degree: '',
     pg_cgpa_percentage: '',
     pg_first_attempt: 'yes',
     pg_year: '',
-  });
+    
+    // M.Phil
+    mphil_institution: '',
+    mphil_university: '',
+    mphil_medium: '',
+    mphil_specialization: '',
+    mphil_degree: '',
+    mphil_cgpa_percentage: '',
+    mphil_first_attempt: 'yes',
+    mphil_year: '',
+  };
   
+  const [educationData, setEducationData] = useState<PivotedEducationData>(initialFormState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [focused, setFocused] = useState<string | null>(null);
   const [formVisible, setFormVisible] = useState(false);
@@ -103,13 +124,15 @@ const EducationForm: React.FC = () => {
 
   const mediumOptions = ['Tamil', 'English', 'Hindi', 'Telugu', 'Malayalam', 'Kannada', 'Other'];
   const firstAttemptOptions = ['yes', 'no'];
+  const degreeOptions = ['B.Sc.', 'B.Tech', 'B.E.', 'B.A.', 'B.Com', 'BBA', 'BCA', 'M.Sc.', 'M.Tech', 'M.E.', 'M.A.', 'M.Com', 'MBA', 'MCA', 'M.Phil'];
 
   // Define the education levels for iterating in the UI
   const educationLevels = [
-    { title: '10th', prefix: 'tenth_' },
-    { title: '12th', prefix: 'twelfth_' },
-    { title: 'UG', prefix: 'ug_' },
-    { title: 'PG', prefix: 'pg_' }
+    { title: '10th', prefix: 'tenth_', hasDegree: false, hasSpecialization: false },
+    { title: '12th', prefix: 'twelfth_', hasDegree: false, hasSpecialization: false },
+    { title: 'UG', prefix: 'ug_', hasDegree: true, hasSpecialization: true },
+    { title: 'PG', prefix: 'pg_', hasDegree: true, hasSpecialization: true },
+    { title: 'M.Phil', prefix: 'mphil_', hasDegree: true, hasSpecialization: true }
   ];
 
   useEffect(() => {
@@ -134,7 +157,7 @@ const EducationForm: React.FC = () => {
         setDataFetched(true);
         setEditMode(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching education data:', error);
       setApiError('Failed to load your education data. Please try again later.');
     } finally {
@@ -148,7 +171,14 @@ const EducationForm: React.FC = () => {
     const strValue = value !== null && value !== undefined ? String(value) : '';
     
     // Extract the field type from the name (e.g., 'institution' from 'tenth_institution')
-    const fieldType = name.split('_').slice(1).join('_');
+    const fieldParts = name.split('_');
+    const level = fieldParts[0];
+    const fieldType = fieldParts.slice(1).join('_');
+    
+    // Skip validation for M.Phil fields if they're empty (M.Phil is optional)
+    if (level === 'mphil' && strValue.trim() === '') {
+      return '';
+    }
     
     switch (fieldType) {
       case 'institution':
@@ -156,7 +186,17 @@ const EducationForm: React.FC = () => {
       case 'medium':
         return strValue.trim() === '' ? `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} is required` : '';
       case 'specialization':
-        return strValue.trim() === '' ? 'Specialization is required' : '';
+        // Only validate specialization for UG, PG, and M.Phil
+        if (['ug', 'pg', 'mphil'].includes(level)) {
+          return strValue.trim() === '' ? 'Specialization is required' : '';
+        }
+        return '';
+      case 'degree':
+        // Only validate degree for UG, PG, and M.Phil
+        if (['ug', 'pg', 'mphil'].includes(level)) {
+          return strValue.trim() === '' ? 'Degree is required' : '';
+        }
+        return '';
       case 'year':
         const yearRegex = /^\d{4}$/;
         if (strValue.trim() === '') return 'Year of completion is required';
@@ -207,6 +247,15 @@ const EducationForm: React.FC = () => {
     }
   };
 
+  // Check if a level has any valid data
+  const levelHasData = (prefix: string): boolean => {
+    const relevantKeys = Object.keys(educationData).filter(key => key.startsWith(prefix));
+    return relevantKeys.some(key => {
+      const value = educationData[key as keyof PivotedEducationData];
+      return typeof value === 'string' && value.trim() !== '';
+    });
+  };
+
   // Submit the form
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -217,7 +266,24 @@ const EducationForm: React.FC = () => {
     
     // For each education level, validate all fields
     educationLevels.forEach(level => {
-      ['institution', 'university', 'medium', 'specialization', 'cgpa_percentage', 'first_attempt', 'year'].forEach(field => {
+      // Skip validation for M.Phil if all M.Phil fields are empty
+      if (level.prefix === 'mphil_' && !levelHasData('mphil_')) {
+        return;
+      }
+      
+      // Determine which fields to validate based on the education level
+      const basicFields = ['institution', 'university', 'medium', 'cgpa_percentage', 'first_attempt', 'year'];
+      let fieldsToValidate = [...basicFields];
+      
+      if (level.hasDegree) {
+        fieldsToValidate.push('degree');
+      }
+      
+      if (level.hasSpecialization) {
+        fieldsToValidate.push('specialization');
+      }
+      
+      fieldsToValidate.forEach(field => {
         const fieldName = `${level.prefix}${field}`;
         const errorMessage = validateField(fieldName, educationData[fieldName as keyof PivotedEducationData]);
         if (errorMessage) {
@@ -243,12 +309,11 @@ const EducationForm: React.FC = () => {
         // Post data to the API
         await axios.post('http://localhost:5000/api/education', formData);
         
-        console.log('Education data submitted successfully');
         setIsSubmitted(true);
         setEditMode(false); // Return to view mode after successful submission
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error submitting education data:', error);
-        setApiError('Failed to save your education data. Please try again.');
+        setApiError(error.response?.data?.error || 'Failed to save your education data. Please try again.');
         
         // Animate error fields
         document.querySelectorAll('.error-field').forEach(el => {
@@ -264,6 +329,37 @@ const EducationForm: React.FC = () => {
         el.classList.add('animate-shake');
         setTimeout(() => el.classList.remove('animate-shake'), 500);
       });
+      
+      // Scroll to the first error
+      const firstErrorElement = document.querySelector('.error-field');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
+
+  // Delete education record
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete your education record? This action cannot be undone.')) {
+      try {
+        setIsLoading(true);
+        await axios.delete(`http://localhost:5000/api/education/${userId}`);
+        
+        // Reset form after deletion
+        setEducationData(initialFormState);
+        setDataFetched(false);
+        setEditMode(true);
+        setIsSubmitted(false);
+        setErrors({});
+        
+        // Show success message
+        alert('Education record deleted successfully');
+      } catch (error: any) {
+        console.error('Error deleting education record:', error);
+        setApiError(error.response?.data?.error || 'Failed to delete your education record. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -331,17 +427,28 @@ const EducationForm: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Education Details</h2>
             {dataFetched && (
-              <button
-                type="button"
-                onClick={toggleEditMode}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  editMode 
-                    ? 'bg-gray-300 text-gray-700 hover:bg-gray-400' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
-              >
-                {editMode ? 'Cancel Edit' : 'Edit Details'}
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={toggleEditMode}
+                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                    editMode 
+                      ? 'bg-gray-300 text-gray-700 hover:bg-gray-400' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
+                  disabled={isLoading}
+                >
+                  {editMode ? 'Cancel Edit' : 'Edit Details'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  disabled={isLoading}
+                >
+                  Delete
+                </button>
+              </div>
             )}
           </div>
           
@@ -424,24 +531,51 @@ const EducationForm: React.FC = () => {
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(`${level.prefix}specialization`, levelIndex * 7 + 3)}>
-                    <label className="block mb-1 font-medium">Specialization</label>
-                    <input
-                      type="text"
-                      name={`${level.prefix}specialization`}
-                      value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
-                      onChange={handleChange}
-                      onFocus={() => handleFocus(`${level.prefix}specialization`)}
-                      onBlur={handleBlur}
-                      className={getInputClasses(`${level.prefix}specialization`)}
-                      disabled={dataFetched && !editMode}
-                    />
-                    {errors[`${level.prefix}specialization`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}specialization`]}</p>
-                    )}
-                  </div>
+                  {/* Specialization field only for UG, PG, and M.Phil */}
+                  {level.hasSpecialization && (
+                    <div {...getFormGroupClasses(`${level.prefix}specialization`, levelIndex * 7 + 3)}>
+                      <label className="block mb-1 font-medium">Specialization</label>
+                      <input
+                        type="text"
+                        name={`${level.prefix}specialization`}
+                        value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
+                        onChange={handleChange}
+                        onFocus={() => handleFocus(`${level.prefix}specialization`)}
+                        onBlur={handleBlur}
+                        className={getInputClasses(`${level.prefix}specialization`)}
+                        disabled={dataFetched && !editMode}
+                      />
+                      {errors[`${level.prefix}specialization`] && (
+                        <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}specialization`]}</p>
+                      )}
+                    </div>
+                  )}
                   
-                  <div {...getFormGroupClasses(`${level.prefix}year`, levelIndex * 7 + 4)}>
+                  {/* Degree field for UG, PG, and M.Phil */}
+                  {level.hasDegree && (
+                    <div {...getFormGroupClasses(`${level.prefix}degree`, levelIndex * 7 + 4)}>
+                      <label className="block mb-1 font-medium">Degree</label>
+                      <select
+                        name={`${level.prefix}degree`}
+                        value={educationData[`${level.prefix}degree` as keyof PivotedEducationData] as string}
+                        onChange={handleChange}
+                        onFocus={() => handleFocus(`${level.prefix}degree`)}
+                        onBlur={handleBlur}
+                        className={getInputClasses(`${level.prefix}degree`)}
+                        disabled={dataFetched && !editMode}
+                      >
+                        <option value="">Select degree</option>
+                        {degreeOptions.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                      {errors[`${level.prefix}degree`] && (
+                        <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}degree`]}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div {...getFormGroupClasses(`${level.prefix}year`, levelIndex * 7 + 5)}>
                     <label className="block mb-1 font-medium">Year of Completion</label>
                     <input
                       type="text"
@@ -459,7 +593,7 @@ const EducationForm: React.FC = () => {
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(`${level.prefix}cgpa_percentage`, levelIndex * 7 + 5)}>
+                  <div {...getFormGroupClasses(`${level.prefix}cgpa_percentage`, levelIndex * 7 + 6)}>
                     <label className="block mb-1 font-medium">CGPA/Percentage</label>
                     <input
                       type="text"
@@ -477,7 +611,7 @@ const EducationForm: React.FC = () => {
                     )}
                   </div>
                   
-                  <div {...getFormGroupClasses(`${level.prefix}first_attempt`, levelIndex * 7 + 6)}>
+                  <div {...getFormGroupClasses(`${level.prefix}first_attempt`, levelIndex * 7 + 7)}>
                     <label className="block mb-1 font-medium">Passed in First Attempt?</label>
                     <select
                       name={`${level.prefix}first_attempt`}
