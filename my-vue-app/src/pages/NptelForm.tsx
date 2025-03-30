@@ -54,9 +54,12 @@ export default function CourseAndInfoForm() {
             setAdditionalInfo({
               family: res.data.family || '',
               reference: res.data.reference || '',
-              anyOtherInfo: res.data.anyOtherInfo || '',
-              awardsDetails: res.data.awardsDetails || '',
-              noOfAwards: res.data.noOfAwards || 0
+              anyOtherInfo: res.data.
+              any_other_info|| '',
+              awardsDetails: res.data.awards_details
+              || '',
+              noOfAwards: res.data.
+              no_of_awards || 0
             });
           }
         })
