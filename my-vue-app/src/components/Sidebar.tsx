@@ -1,11 +1,9 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FileText, 
-  ClipboardList, 
   LogOut,
   X,
   Home,
-  Settings,
   User,
   Menu
 } from 'lucide-react';
@@ -42,21 +40,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       path: '/dashboard/application-form',
       name: 'Application Form',
       icon: <FileText size={20} />
-    },
-    {
-      path: '/dashboard/application-status',
-      name: 'Application Status',
-      icon: <ClipboardList size={20} />
-    },
-    {
-      path: '/dashboard/profile',
-      name: 'Profile',
-      icon: <User size={20} />
-    },
-    {
-      path: '/dashboard/settings',
-      name: 'Settings',
-      icon: <Settings size={20} />
     }
   ];
 
