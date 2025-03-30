@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PersonalForm from './PersonalForm';
 import EducationForm from './EducationForm';
 import ExperienceForm from './ExperienceForm';
@@ -17,13 +18,36 @@ const tabs = [
 export default function ApplicationForm() {
   const [activeTab, setActiveTab] = useState('Personal');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const userId= localStorage.getItem('userId');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const userId = localStorage.getItem('userId');
+  const navigate = useNavigate();
+
+  const handleSubmit = () => {
+    // Show confirmation dialog first
+    setShowConfirmation(true);
+  };
+
+  const confirmSubmit = () => {
+    // Close the dialog
+    setShowConfirmation(false);
+    
+    // Here you can add any final submission logic if needed
+    // For example, validating all sections or sending data to server
+    
+    // Redirect to application status page
+    navigate('/dashboard/application-status');
+  };
+
+  const cancelSubmit = () => {
+    // Just close the dialog
+    setShowConfirmation(false);
+  };
 
   const renderForm = () => {
     switch (activeTab) {
       case 'Personal': return <PersonalForm />;
       case 'Education': return <EducationForm />;
-      case 'Experience': return <ExperienceForm userId= {Number(userId)} />;
+      case 'Experience': return <ExperienceForm userId={Number(userId)} />;
       case 'Publications': return <PublicationsForm />;
       case 'NPTEL': return <NptelForm />;
       default: return null;
@@ -122,21 +146,55 @@ export default function ApplicationForm() {
             >
               Previous
             </button>
-            <button
-              onClick={() => {
-                const currentIndex = tabs.findIndex(t => t.id === activeTab);
-                if (currentIndex < tabs.length - 1) {
-                  setActiveTab(tabs[currentIndex + 1].id);
-                }
-              }}
-              className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-              disabled={activeTab === tabs[tabs.length - 1].id}
-            >
-              Next
-            </button>
+            
+            {activeTab === 'NPTEL' ? (
+              <button
+                onClick={handleSubmit}
+                className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                Submit Application
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const currentIndex = tabs.findIndex(t => t.id === activeTab);
+                  if (currentIndex < tabs.length - 1) {
+                    setActiveTab(tabs[currentIndex + 1].id);
+                  }
+                }}
+                className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                disabled={activeTab === tabs[tabs.length - 1].id}
+              >
+                Next
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold text-red-600 mb-2">Warning</h3>
+            <p className="mb-4 text-gray-700">After submission, this form cannot be edited further. Are you sure you want to proceed?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelSubmit}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubmit}
+                className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700"
+              >
+                Yes, Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
