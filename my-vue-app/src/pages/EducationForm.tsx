@@ -57,6 +57,16 @@ interface FormErrors {
   [key: string]: string;
 }
 
+// Map of degree to possible specializations
+interface SpecializationMap {
+  [degree: string]: string[];
+}
+
+// Map of UG specialization to related PG specializations
+interface RelatedSpecializationsMap {
+  [ugSpecialization: string]: string[];
+}
+
 const EducationForm: React.FC = () => {
   // Assume user ID is available from context/props/local storage
   const userId = localStorage.getItem('userId');
@@ -121,10 +131,88 @@ const EducationForm: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [availableUgSpecializations, setAvailableUgSpecializations] = useState<string[]>([]);
+  const [availablePgSpecializations, setAvailablePgSpecializations] = useState<string[]>([]);
 
   const mediumOptions = ['Tamil', 'English', 'Hindi', 'Telugu', 'Malayalam', 'Kannada', 'Other'];
-  const firstAttemptOptions = ['yes', 'no'];
-  const degreeOptions = ['B.Sc.', 'B.Tech', 'B.E.', 'B.A.', 'B.Com', 'BBA', 'BCA', 'M.Sc.', 'M.Tech', 'M.E.', 'M.A.', 'M.Com', 'MBA', 'MCA', 'M.Phil'];
+      const degreeOptions = [ 'B.Sc.', 'B.Tech', 'B.E.', 'B.A.', 'B.Com', 'BBA', 'BCA', 'M.Sc.', 'M.Tech', 'M.E.', 'M.A.', 'M.Com', 'MBA', 'MCA', 'M.Phil'];
+  
+  // Define specialization maps
+  const ugSpecializationsByDegree: SpecializationMap = {
+    'B.Sc.': ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology'],
+    'B.Tech': ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Electrical'],
+    'B.E.': ['Computer Science', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Instrumentation'],
+    'B.A.': ['English', 'History', 'Economics', 'Political Science', 'Sociology', 'Psychology'],
+    'B.Com': ['General', 'Accounting', 'Finance', 'Banking', 'Taxation'],
+    'BBA': ['General', 'Finance', 'Marketing', 'HR', 'Operations'],
+    'BCA': ['General', 'Software Development', 'Networking', 'Web Development']
+  };
+  
+  // Define PG specializations that relate to UG specializations
+  const pgSpecializationsByUgSpecialization: RelatedSpecializationsMap = {
+    // CS related
+    'Computer Science': ['Advanced Computing', 'Artificial Intelligence', 'Data Science', 'Machine Learning', 'Cybersecurity', 'Software Engineering', 'Cloud Computing'],
+    'Information Technology': ['Network Administration', 'IT Management', 'Systems Analysis', 'Database Management', 'Web Technologies'],
+    'Software Development': ['Software Architecture', 'Mobile App Development', 'Enterprise Software', 'Software Testing', 'DevOps'],
+    'Networking': ['Network Security', 'Cloud Infrastructure', 'Network Design', 'IoT Systems'],
+    'Web Development': ['Full Stack Development', 'UI/UX Design', 'E-commerce Systems', 'Web Security'],
+    
+    // Engineering related
+    'Electronics': ['VLSI Design', 'Embedded Systems', 'Signal Processing', 'Robotics', 'Communication Systems'],
+    'Mechanical': ['Thermal Engineering', 'Manufacturing Systems', 'CAD/CAM', 'Robotics', 'Automobile Engineering'],
+    'Civil': ['Structural Engineering', 'Environmental Engineering', 'Transportation Engineering', 'Geotechnical Engineering'],
+    'Electrical': ['Power Systems', 'Control Systems', 'Power Electronics', 'Smart Grid Technologies'],
+    'Instrumentation': ['Process Control', 'Industrial Automation', 'Biomedical Instrumentation'],
+    
+    // Science related
+    'Mathematics': ['Pure Mathematics', 'Applied Mathematics', 'Statistics', 'Operations Research', 'Data Science'],
+    'Physics': ['Theoretical Physics', 'Applied Physics', 'Astrophysics', 'Quantum Physics', 'Material Science'],
+    'Chemistry': ['Organic Chemistry', 'Inorganic Chemistry', 'Physical Chemistry', 'Analytical Chemistry', 'Biochemistry'],
+    'Biology': ['Microbiology', 'Biotechnology', 'Genetics', 'Ecology', 'Molecular Biology'],
+    
+    // Arts related
+    'English': ['Literature', 'Linguistics', 'Creative Writing', 'Communication'],
+    'History': ['Ancient History', 'Modern History', 'Art History', 'Military History', 'Cultural History'],
+    'Economics': ['Microeconomics', 'Macroeconomics', 'Development Economics', 'International Economics'],
+    'Political Science': ['International Relations', 'Public Policy', 'Political Theory', 'Governance'],
+    'Sociology': ['Social Research', 'Criminology', 'Urban Sociology', 'Cultural Sociology'],
+    'Psychology': ['Clinical Psychology', 'Organizational Psychology', 'Cognitive Psychology', 'Educational Psychology'],
+    
+    // Commerce related
+    'General': ['Finance', 'Marketing', 'Human Resources', 'Operations', 'International Business'],
+    'Accounting': ['Financial Accounting', 'Management Accounting', 'Auditing', 'Taxation'],
+    'Finance': ['Financial Management', 'Investment Banking', 'Risk Management', 'Corporate Finance'],
+    'Banking': ['Banking Operations', 'Investment Banking', 'Risk Management', 'Financial Services'],
+    'Taxation': ['Direct Taxation', 'Indirect Taxation', 'International Taxation', 'Tax Planning'],
+    'Marketing': ['Digital Marketing', 'Brand Management', 'Market Research', 'Retail Management'],
+    'HR': ['HR Management', 'Training & Development', 'Organizational Behavior', 'Performance Management'],
+    'Operations': ['Supply Chain Management', 'Project Management', 'Quality Management', 'Logistics']
+  };
+  
+  // Default PG specializations when no UG specialization is selected
+  const defaultPgSpecializations = [
+    'Computer Science', 'Information Technology', 'Electronics', 
+    'Finance', 'Marketing', 'Human Resources', 'Operations Management',
+    'Data Science', 'Artificial Intelligence', 'Communications'
+  ];
+  
+  // Map PG degrees to their possible specializations (if UG specialization is not selected)
+  const pgSpecializationsByDegree: SpecializationMap = {
+    'M.Sc.': ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Data Science', 'Statistics'],
+    'M.Tech': ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'AI & ML'],
+    'M.E.': ['Computer Science', 'Electronics', 'Mechanical', 'Civil', 'Electrical', 'Instrumentation'],
+    'M.A.': ['English', 'History', 'Economics', 'Political Science', 'Sociology', 'Psychology'],
+    'M.Com': ['General', 'Accounting', 'Finance', 'Banking', 'Taxation'],
+    'MBA': ['General', 'Finance', 'Marketing', 'HR', 'Operations', 'International Business', 'IT'],
+    'MCA': ['General', 'Software Development', 'Networking', 'Web Development', 'AI & ML', 'Data Science']
+  };
+  
+  // M.Phil specializations
+  const mphilSpecializations = [
+    'Computer Science', 'Information Technology', 'Mathematics', 'Physics', 
+    'Chemistry', 'Biology', 'English', 'History', 'Economics', 'Commerce',
+    'Management Studies', 'Psychology', 'Sociology'
+  ];
 
   // Define the education levels for iterating in the UI
   const educationLevels = [
@@ -144,6 +232,47 @@ const EducationForm: React.FC = () => {
     fetchEducationData();
   }, []);
 
+  // Update available UG specializations when UG degree changes
+  useEffect(() => {
+    const ugDegree = educationData.ug_degree;
+    if (ugDegree && ugSpecializationsByDegree[ugDegree]) {
+      setAvailableUgSpecializations(ugSpecializationsByDegree[ugDegree]);
+      
+      // If current specialization is not in the list, reset it
+      if (educationData.ug_specialization && !ugSpecializationsByDegree[ugDegree].includes(educationData.ug_specialization)) {
+        setEducationData(prev => ({
+          ...prev,
+          ug_specialization: ''
+        }));
+      }
+    } else {
+      setAvailableUgSpecializations([]);
+    }
+  }, [educationData.ug_degree]);
+
+  // Update available PG specializations when UG specialization or PG degree changes
+  useEffect(() => {
+    // First, check if we have a UG specialization to use for related PG specializations
+    if (educationData.ug_specialization && pgSpecializationsByUgSpecialization[educationData.ug_specialization]) {
+      // We have related specializations based on UG selection
+      setAvailablePgSpecializations(pgSpecializationsByUgSpecialization[educationData.ug_specialization]);
+    } else if (educationData.pg_degree && pgSpecializationsByDegree[educationData.pg_degree]) {
+      // Fallback to degree-based specializations if no UG specialization is selected
+      setAvailablePgSpecializations(pgSpecializationsByDegree[educationData.pg_degree]);
+    } else {
+      // Use default if neither UG specialization nor PG degree is selected
+      setAvailablePgSpecializations(defaultPgSpecializations);
+    }
+    
+    // If current PG specialization is not in the updated list, reset it
+    if (educationData.pg_specialization && !availablePgSpecializations.includes(educationData.pg_specialization)) {
+      setEducationData(prev => ({
+        ...prev,
+        pg_specialization: ''
+      }));
+    }
+  }, [educationData.ug_specialization, educationData.pg_degree]);
+
   // Fetch existing education data from API
   const fetchEducationData = async () => {
     try {
@@ -156,6 +285,17 @@ const EducationForm: React.FC = () => {
         setEducationData(response.data);
         setDataFetched(true);
         setEditMode(false);
+        
+        // Set available specializations based on fetched data
+        if (response.data.ug_degree && ugSpecializationsByDegree[response.data.ug_degree]) {
+          setAvailableUgSpecializations(ugSpecializationsByDegree[response.data.ug_degree]);
+        }
+        
+        if (response.data.ug_specialization && pgSpecializationsByUgSpecialization[response.data.ug_specialization]) {
+          setAvailablePgSpecializations(pgSpecializationsByUgSpecialization[response.data.ug_specialization]);
+        } else if (response.data.pg_degree && pgSpecializationsByDegree[response.data.pg_degree]) {
+          setAvailablePgSpecializations(pgSpecializationsByDegree[response.data.pg_degree]);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching education data:', error);
@@ -511,148 +651,246 @@ const EducationForm: React.FC = () => {
                   </div>
                   
                   <div {...getFormGroupClasses(`${level.prefix}medium`, levelIndex * 7 + 2)}>
-                    <label className="block mb-1 font-medium">Medium of Instruction</label>
-                    <select
-                      name={`${level.prefix}medium`}
-                      value={educationData[`${level.prefix}medium` as keyof PivotedEducationData] as string}
-                      onChange={handleChange}
-                      onFocus={() => handleFocus(`${level.prefix}medium`)}
-                      onBlur={handleBlur}
-                      className={getInputClasses(`${level.prefix}medium`)}
-                      disabled={dataFetched && !editMode}
-                    >
-                      <option value="">Select medium</option>
-                      {mediumOptions.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                    {errors[`${level.prefix}medium`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}medium`]}</p>
-                    )}
-                  </div>
-                  
-                  {/* Specialization field only for UG, PG, and M.Phil */}
-                  {level.hasSpecialization && (
-                    <div {...getFormGroupClasses(`${level.prefix}specialization`, levelIndex * 7 + 3)}>
-                      <label className="block mb-1 font-medium">Specialization</label>
-                      <input
-                        type="text"
-                        name={`${level.prefix}specialization`}
-                        value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
-                        onChange={handleChange}
-                        onFocus={() => handleFocus(`${level.prefix}specialization`)}
-                        onBlur={handleBlur}
-                        className={getInputClasses(`${level.prefix}specialization`)}
-                        disabled={dataFetched && !editMode}
-                      />
-                      {errors[`${level.prefix}specialization`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}specialization`]}</p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Degree field for UG, PG, and M.Phil */}
-                  {level.hasDegree && (
-                    <div {...getFormGroupClasses(`${level.prefix}degree`, levelIndex * 7 + 4)}>
-                      <label className="block mb-1 font-medium">Degree</label>
-                      <select
-                        name={`${level.prefix}degree`}
-                        value={educationData[`${level.prefix}degree` as keyof PivotedEducationData] as string}
-                        onChange={handleChange}
-                        onFocus={() => handleFocus(`${level.prefix}degree`)}
-                        onBlur={handleBlur}
-                        className={getInputClasses(`${level.prefix}degree`)}
-                        disabled={dataFetched && !editMode}
-                      >
-                        <option value="">Select degree</option>
-                        {degreeOptions.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                      {errors[`${level.prefix}degree`] && (
-                        <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}degree`]}</p>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div {...getFormGroupClasses(`${level.prefix}year`, levelIndex * 7 + 5)}>
-                    <label className="block mb-1 font-medium">Year of Completion</label>
-                    <input
-                      type="text"
-                      name={`${level.prefix}year`}
-                      value={educationData[`${level.prefix}year` as keyof PivotedEducationData] as string}
-                      onChange={handleChange}
-                      onFocus={() => handleFocus(`${level.prefix}year`)}
-                      onBlur={handleBlur}
-                      className={getInputClasses(`${level.prefix}year`)}
-                      placeholder="YYYY"
-                      disabled={dataFetched && !editMode}
-                    />
-                    {errors[`${level.prefix}year`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}year`]}</p>
-                    )}
-                  </div>
-                  
-                  <div {...getFormGroupClasses(`${level.prefix}cgpa_percentage`, levelIndex * 7 + 6)}>
-                    <label className="block mb-1 font-medium">CGPA/Percentage</label>
-                    <input
-                      type="text"
-                      name={`${level.prefix}cgpa_percentage`}
-                      value={educationData[`${level.prefix}cgpa_percentage` as keyof PivotedEducationData] as string}
-                      onChange={handleChange}
-                      onFocus={() => handleFocus(`${level.prefix}cgpa_percentage`)}
-                      onBlur={handleBlur}
-                      className={getInputClasses(`${level.prefix}cgpa_percentage`)}
-                      placeholder="e.g., 8.5 or 85%"
-                      disabled={dataFetched && !editMode}
-                    />
-                    {errors[`${level.prefix}cgpa_percentage`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}cgpa_percentage`]}</p>
-                    )}
-                  </div>
-                  
-                  <div {...getFormGroupClasses(`${level.prefix}first_attempt`, levelIndex * 7 + 7)}>
-                    <label className="block mb-1 font-medium">Passed in First Attempt?</label>
-                    <select
-                      name={`${level.prefix}first_attempt`}
-                      value={educationData[`${level.prefix}first_attempt` as keyof PivotedEducationData] as string}
-                      onChange={handleChange}
-                      onFocus={() => handleFocus(`${level.prefix}first_attempt`)}
-                      onBlur={handleBlur}
-                      className={getInputClasses(`${level.prefix}first_attempt`)}
-                      disabled={dataFetched && !editMode}
-                    >
-                      {firstAttemptOptions.map(option => (
-                        <option key={option} value={option}>{option === 'yes' ? 'Yes' : 'No'}</option>
-                      ))}
-                    </select>
-                    {errors[`${level.prefix}first_attempt`] && (
-                      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}first_attempt`]}</p>
-                    )}
+  <label className="block mb-1 font-medium">Medium of Instruction</label>
+  <select
+    name={`${level.prefix}medium`}
+    value={educationData[`${level.prefix}medium` as keyof PivotedEducationData] as string}
+    onChange={handleChange}
+    onFocus={() => handleFocus(`${level.prefix}medium`)}
+    onBlur={handleBlur}
+    className={getInputClasses(`${level.prefix}medium`)}
+    disabled={dataFetched && !editMode}
+  >
+    <option value="">Select Medium</option>
+    {mediumOptions.map(option => (
+      <option key={option} value={option}>{option}</option>
+    ))}
+  </select>
+  {errors[`${level.prefix}medium`] && (
+    <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}medium`]}</p>
+  )}
+</div>
+
+{level.hasDegree && (
+  <div {...getFormGroupClasses(`${level.prefix}degree`, levelIndex * 7 + 3)}>
+    <label className="block mb-1 font-medium">Degree</label>
+    <select
+      name={`${level.prefix}degree`}
+      value={educationData[`${level.prefix}degree` as keyof PivotedEducationData] as string}
+      onChange={handleChange}
+      onFocus={() => handleFocus(`${level.prefix}degree`)}
+      onBlur={handleBlur}
+      className={getInputClasses(`${level.prefix}degree`)}
+      disabled={dataFetched && !editMode}
+    >
+      <option value="">Select Degree</option>
+      {/* Filter degree options based on level */}
+      {level.prefix === 'ug_' && 
+        degreeOptions
+          .filter(deg => deg.startsWith('B.') || deg === 'BBA' || deg === 'BCA')
+          .map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))
+      }
+      {level.prefix === 'pg_' && 
+        degreeOptions
+          .filter(deg => deg.startsWith('M.') && deg !== 'M.Phil')
+          .map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))
+      }
+      {level.prefix === 'mphil_' && 
+        degreeOptions
+          .filter(deg => deg === 'M.Phil')
+          .map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))
+      }
+    </select>
+    {errors[`${level.prefix}degree`] && (
+      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}degree`]}</p>
+    )}
+  </div>
+)}
+
+{level.hasSpecialization && (
+  <div {...getFormGroupClasses(`${level.prefix}specialization`, levelIndex * 7 + 4)}>
+    <label className="block mb-1 font-medium">Specialization</label>
+    {level.prefix === 'ug_' ? (
+      <select
+        name={`${level.prefix}specialization`}
+        value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
+        onChange={(e) => {
+          handleChange(e);
+          // When UG specialization changes, update the PG specializations list
+          const ugSpecialization = e.target.value;
+          if (ugSpecialization && pgSpecializationsByUgSpecialization[ugSpecialization]) {
+            setAvailablePgSpecializations(pgSpecializationsByUgSpecialization[ugSpecialization]);
+            
+            // Reset PG and M.Phil specialization if they don't match the new UG specialization
+            const pgSpec = educationData.pg_specialization;
+            if (pgSpec && !pgSpecializationsByUgSpecialization[ugSpecialization].includes(pgSpec)) {
+              setEducationData(prev => ({
+                ...prev,
+                pg_specialization: ''
+              }));
+            }
+            
+            // For M.Phil, filter to more relevant specializations based on UG choice
+            const relevantMPhilSpecs = mphilSpecializations.filter(spec => 
+              spec === ugSpecialization || 
+              pgSpecializationsByUgSpecialization[ugSpecialization].includes(spec)
+            );
+            
+            // If there are relevant specializations for M.Phil, update them
+            if (relevantMPhilSpecs.length > 0) {
+              const mphilSpec = educationData.mphil_specialization;
+              if (mphilSpec && !relevantMPhilSpecs.includes(mphilSpec)) {
+                setEducationData(prev => ({
+                  ...prev,
+                  mphil_specialization: ''
+                }));
+              }
+            }
+          }
+        }}
+        onFocus={() => handleFocus(`${level.prefix}specialization`)}
+        onBlur={handleBlur}
+        className={getInputClasses(`${level.prefix}specialization`)}
+        disabled={dataFetched && !editMode || !educationData.ug_degree}
+      >
+        <option value="">Select Specialization</option>
+        {availableUgSpecializations.map(option => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    ) : level.prefix === 'pg_' ? (
+      <select
+        name={`${level.prefix}specialization`}
+        value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
+        onChange={handleChange}
+        onFocus={() => handleFocus(`${level.prefix}specialization`)}
+        onBlur={handleBlur}
+        className={getInputClasses(`${level.prefix}specialization`)}
+        disabled={dataFetched && !editMode || !educationData.pg_degree}
+      >
+        <option value="">Select Specialization</option>
+        {availablePgSpecializations.map(option => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    ) : (
+      <select
+        name={`${level.prefix}specialization`}
+        value={educationData[`${level.prefix}specialization` as keyof PivotedEducationData] as string}
+        onChange={handleChange}
+        onFocus={() => handleFocus(`${level.prefix}specialization`)}
+        onBlur={handleBlur}
+        className={getInputClasses(`${level.prefix}specialization`)}
+        disabled={dataFetched && !editMode || !educationData.mphil_degree}
+      >
+        <option value="">Select Specialization</option>
+        {/* If UG specialization is selected, filter M.Phil specializations to related ones */}
+        {educationData.ug_specialization ? 
+          mphilSpecializations
+            .filter(spec => 
+              spec === educationData.ug_specialization || 
+              (educationData.pg_specialization && spec === educationData.pg_specialization) ||
+              (pgSpecializationsByUgSpecialization[educationData.ug_specialization] && 
+               pgSpecializationsByUgSpecialization[educationData.ug_specialization].includes(spec))
+            )
+            .map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))
+          : 
+          mphilSpecializations.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))
+        }
+      </select>
+    )}
+    {errors[`${level.prefix}specialization`] && (
+      <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}specialization`]}</p>
+    )}
+  </div>
+)}
+
+<div {...getFormGroupClasses(`${level.prefix}cgpa_percentage`, levelIndex * 7 + 5)}>
+  <label className="block mb-1 font-medium">CGPA/Percentage</label>
+  <input
+    type="text"
+    name={`${level.prefix}cgpa_percentage`}
+    value={educationData[`${level.prefix}cgpa_percentage` as keyof PivotedEducationData] as string}
+    onChange={handleChange}
+    onFocus={() => handleFocus(`${level.prefix}cgpa_percentage`)}
+    onBlur={handleBlur}
+    placeholder="Enter CGPA (0-10) or Percentage (0-100%)"
+    className={getInputClasses(`${level.prefix}cgpa_percentage`)}
+    disabled={dataFetched && !editMode}
+  />
+  {errors[`${level.prefix}cgpa_percentage`] && (
+    <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}cgpa_percentage`]}</p>
+  )}
+</div>
+
+<div {...getFormGroupClasses(`${level.prefix}first_attempt`, levelIndex * 7 + 6)}>
+  <label className="block mb-1 font-medium">Passed in First Attempt?</label>
+  <select
+    name={`${level.prefix}first_attempt`}
+    value={educationData[`${level.prefix}first_attempt` as keyof PivotedEducationData] as string}
+    onChange={handleChange}
+    onFocus={() => handleFocus(`${level.prefix}first_attempt`)}
+    onBlur={handleBlur}
+    className={getInputClasses(`${level.prefix}first_attempt`)}
+    disabled={dataFetched && !editMode}
+  >
+    <option value="yes">Yes</option>
+    <option value="no">No</option>
+  </select>
+  {errors[`${level.prefix}first_attempt`] && (
+    <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}first_attempt`]}</p>
+  )}
+</div>
+
+<div {...getFormGroupClasses(`${level.prefix}year`, levelIndex * 7 + 7)}>
+  <label className="block mb-1 font-medium">Year of Completion</label>
+  <input
+    type="text"
+    name={`${level.prefix}year`}
+    value={educationData[`${level.prefix}year` as keyof PivotedEducationData] as string}
+    onChange={handleChange}
+    onFocus={() => handleFocus(`${level.prefix}year`)}
+    onBlur={handleBlur}
+    placeholder="YYYY"
+    className={getInputClasses(`${level.prefix}year`)}
+    disabled={dataFetched && !editMode}
+  />
+  {errors[`${level.prefix}year`] && (
+    <p className="text-red-500 text-sm mt-1">{errors[`${level.prefix}year`]}</p>
+  )}
+</div>
                   </div>
                 </div>
+              ))}
+              
+              <div className="mt-8 flex justify-end">
+                {(!dataFetched || editMode) && (
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Saving...' : 'Save Education Details'}
+                  </button>
+                )}
               </div>
-            ))}
-            
-            {/* Only show the Save button if in edit mode or no data has been fetched yet */}
-            {(!dataFetched || editMode) && (
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Saving...' : 'Save Education Details'}
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-      ) : (
-        <PHDForm />
-      )}
-    </div>
-  );
+            </form>
+          </div>
+        ) : (
+          <PHDForm />
+        )}
+      </div>
+    );
 };
 
 export default EducationForm;

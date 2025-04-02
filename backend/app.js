@@ -8,6 +8,7 @@ import phdRoutes from './routes/phdRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import userinfoRoutes from './routes/userInfoRoutes.js';
 import publicationRoutes from './routes/publicationRoutes.js';
+import marksRoutes from './routes/marksRoutes.js';
 import path from 'path';
 
 const app = express();
@@ -23,5 +24,6 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/user-info', userinfoRoutes);
 app.use('/api/publications',publicationRoutes);
 app.use('/api/', experienceRoutes);
+app.use('/api/marks', marksRoutes);  //
 
 app.listen(5000, () => console.log('Server running on port 5000'));

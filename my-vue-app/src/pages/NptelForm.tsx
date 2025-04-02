@@ -5,12 +5,10 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 interface Course {
   id?: string;
   courseId?: number;
-  course_name: string;
+  courseName: string;
   platform: string;
   duration: string;
-
-  score_earned
-  : string;
+  scoreEarned: string;
 }
 
 export default function CourseAndInfoForm() {
@@ -21,12 +19,10 @@ export default function CourseAndInfoForm() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [courseForm, setCourseForm] = useState<Course>({
-    course_name: '',
+    courseName: '',
     platform: 'NPTEL',
     duration: '4 weeks',
-
-    score_earned
-      : '',
+    scoreEarned: '',
   });
 
   // Additional info state
@@ -55,18 +51,7 @@ export default function CourseAndInfoForm() {
       axios.get(`http://localhost:5000/api/user-info/${userId}`)
         .then(res => {
           if (res.data) {
-            setAdditionalInfo({
-              family: res.data.family || '',
-              reference: res.data.reference || '',
-              anyOtherInfo: res.data.
-                any_other_info || '',
-              awardsDetails: res.data.awards_details
-                || '',
-              noOfAwards: res.data.
-                no_of_awards || 0
-            });
-          }
-        })
+            setAdditionalInfo({ family: res.data.family || '', reference: res.data.reference || '', anyOtherInfo: res.data. any_other_info || '', awardsDetails: res.data.awards_details || '', noOfAwards: res.data. no_of_awards || 0 }); } })
         .catch(err => console.error('Fetch Additional Info Error:', err));
     }
   }, [userId]);
@@ -85,16 +70,16 @@ export default function CourseAndInfoForm() {
   // Reset the course form to its initial state
   const resetCourseForm = () => {
     setCourseForm({
-      course_name: '',
+      courseName: '',
       platform: 'NPTEL',
       duration: '4 weeks',
-      score_earned: '',
+      scoreEarned: '',
     });
   };
 
   // Add a new course to the list
   const addCourse = () => {
-    if (!courseForm.course_name) {
+    if (!courseForm.courseName) {
       alert('Please enter a course name');
       return;
     }
@@ -111,14 +96,10 @@ export default function CourseAndInfoForm() {
   const editCourse = (course: Course) => {
     setEditingCourseId(course.id || '');
     setCourseForm({
-      course_name: course.course_name,
+      courseName: course.courseName,
       platform: 'NPTEL',
       duration: course.duration,
-
-      score_earned
-        : course.
-          score_earned
-      ,
+      scoreEarned: course.scoreEarned,
     });
   };
 
@@ -193,7 +174,7 @@ export default function CourseAndInfoForm() {
                     <input
                       type="text"
                       name="courseName"
-                      value={courseForm.course_name}
+                      value={courseForm.courseName}
                       onChange={handleCourseInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter course name"
@@ -227,9 +208,7 @@ export default function CourseAndInfoForm() {
                     <input
                       type="text"
                       name="scoreEarned"
-                      value={courseForm.
-                        score_earned
-                      }
+                      value={courseForm.scoreEarned}
                       onChange={handleCourseInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="e.g., 85%"
@@ -287,10 +266,10 @@ export default function CourseAndInfoForm() {
                       ) : (
                         courses.map((course) => (
                           <tr key={course.id} className="hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-700">{course.course_name}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{course.courseName}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">{course.platform}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">{course.duration}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{course.score_earned}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{course.scoreEarned}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">
                               <div className="flex space-x-2">
                                 <button
