@@ -22,3 +22,12 @@ export const login = (req, res) => {
     res.status(200).json({ message: 'Login success', user: data[0] });
   });
 };
+
+export const updateUserSubmission=(req,res)=>{
+  const userId = req.params.userId;
+  const q='UPDATE users set formsubmitted = 1 where id= ?';
+  db.query(q,[userId],(err,data)=>{
+    if (err) return res.status(500).json(err);
+    res.status(200).json({ message: 'Form submitted successfully' });
+  })
+}

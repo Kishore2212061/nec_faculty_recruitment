@@ -18,11 +18,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const location = useLocation();
   const userName = localStorage.getItem('userName');
   const userEmail = localStorage.getItem('userEmail');
-  
+  const formSubmitted = localStorage.getItem('formsubmitted');
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('formsubmitted');
+    localStorage.removeItem('userId');
+    
     navigate('/');
   };
 

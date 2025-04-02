@@ -16,9 +16,11 @@ export default function Login() {
       const userId = res.data.user.id;
       const userName = res.data.user.name;
       const userEmail = res.data.user.email;
+      const formsubmitted = res.data.user.formsubmitted;
       localStorage.setItem('userId', userId);
       localStorage.setItem('userName', userName);
       localStorage.setItem('userEmail', userEmail);
+      localStorage.setItem('formsubmitted',formsubmitted);
       alert(res.data.message);
       navigate('/dashboard');
     } catch (err) {
