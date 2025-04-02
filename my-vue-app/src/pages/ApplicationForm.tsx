@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PersonalForm from './PersonalForm';
 import EducationForm from './EducationForm';
 import ExperienceForm from './ExperienceForm';
 import PublicationsForm from './PublicationsForm';
 import NptelForm from './NptelForm';
-import { BookOpen, Briefcase, GraduationCap, User, Award, Menu } from 'lucide-react';
+import { BookOpen, Briefcase, GraduationCap, User, Award, Menu, AlertCircle, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 
 const tabs = [
   { id: 'Personal', icon: User },
@@ -19,18 +20,31 @@ export default function ApplicationForm() {
   const [activeTab, setActiveTab] = useState('Personal');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const userId = localStorage.getItem('userId');
   const navigate = useNavigate();
+
+  // Check if form is already submitted when component mounts
+  useEffect(() => {
+    const formSubmitted = localStorage.getItem('formsubmitted');
+    if (formSubmitted === '1') {
+      setIsFormSubmitted(true);
+    }
+  }, []);
 
   const handleSubmit = () => {
     // Show confirmation dialog first
     setShowConfirmation(true);
   };
 
-  const confirmSubmit = () => {
+  const confirmSubmit = async() => {
     // Close the dialog
     setShowConfirmation(false);
-    
+    const response = await axios.put(`http://localhost:5000/api/auth/submission/${userId}`);
+    console.log(response);
+    localStorage.setItem('formsubmitted', '1');
+    setIsFormSubmitted(true);
+    //if (!response.ok) throw new Error('Failed to submit form');
     // Here you can add any final submission logic if needed
     // For example, validating all sections or sending data to server
     
@@ -53,6 +67,39 @@ export default function ApplicationForm() {
       default: return null;
     }
   };
+
+  // If form is already submitted, show "already submitted" message
+  if (isFormSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-lg w-full p-6 sm:p-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-green-100 p-3 rounded-full mb-4">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Form Already Submitted</h2>
+            <p className="text-gray-600 mb-6">
+              Your application has been successfully submitted and cannot be edited further.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate('/dashboard/application-status')}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                View Application Status
+              </button>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
