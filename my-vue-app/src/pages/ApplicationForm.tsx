@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import PersonalForm from './PersonalForm';
 import EducationForm from './EducationForm';
 import ExperienceForm from './ExperienceForm';
 import PublicationsForm from './PublicationsForm';
 import NptelForm from './NptelForm';
-import { BookOpen, Briefcase, GraduationCap, User, Award, Menu, AlertCircle, CheckCircle } from 'lucide-react';
-import axios from 'axios';
+import { BookOpen, Briefcase, GraduationCap, User, Award, Menu } from 'lucide-react';
 
 const tabs = [
   { id: 'Personal', icon: User },
@@ -20,36 +20,58 @@ export default function ApplicationForm() {
   const [activeTab, setActiveTab] = useState('Personal');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [marks, setMarks] = useState(null);
+  
   const userId = localStorage.getItem('userId');
   const navigate = useNavigate();
 
-  // Check if form is already submitted when component mounts
-  useEffect(() => {
-    const formSubmitted = localStorage.getItem('formsubmitted');
-    if (formSubmitted === '1') {
-      setIsFormSubmitted(true);
+  const fetchMarks = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/marks/${userId}`);
+      setMarks(response.data);
+    } catch (err) {
+      console.error("Error fetching marks:", err);
     }
-  }, []);
+  };
+
+  const calculateMarks = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.post(`http://localhost:5000/api/marks/calculate/${userId}`);
+      console.log("Calculation response:", response.data);
+      setMarks(response.data.weights);
+      // Also update the local marks data
+      await fetchMarks();
+      return true;
+    } catch (err) {
+      console.error("Error calculating marks:", err);
+      alert("Failed to calculate marks. Please ensure all required information is complete.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = () => {
     // Show confirmation dialog first
     setShowConfirmation(true);
   };
 
-  const confirmSubmit = async() => {
+  const confirmSubmit = async () => {
     // Close the dialog
     setShowConfirmation(false);
-    const response = await axios.put(`http://localhost:5000/api/auth/submission/${userId}`);
-    console.log(response);
-    localStorage.setItem('formsubmitted', '1');
-    setIsFormSubmitted(true);
-    //if (!response.ok) throw new Error('Failed to submit form');
-    // Here you can add any final submission logic if needed
-    // For example, validating all sections or sending data to server
     
-    // Redirect to application status page
-    navigate('/dashboard/application-status');
+    // Calculate marks before submitting
+    const success = await calculateMarks();
+    
+    if (success) {
+      // Redirect to application status page
+      navigate('/dashboard/application-status');
+    }
+    // If not successful, we stay on the current page and error will be displayed
   };
 
   const cancelSubmit = () => {
@@ -68,39 +90,6 @@ export default function ApplicationForm() {
     }
   };
 
-  // If form is already submitted, show "already submitted" message
-  if (isFormSubmitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-lg w-full p-6 sm:p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-green-100 p-3 rounded-full mb-4">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Form Already Submitted</h2>
-            <p className="text-gray-600 mb-6">
-              Your application has been successfully submitted and cannot be edited further.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => navigate('/dashboard/application-status')}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-              >
-                View Application Status
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
-              >
-                Go to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <div className="min-h-screen flex flex-col p-2 sm:p-4 max-w-7xl mx-auto">
@@ -109,6 +98,21 @@ export default function ApplicationForm() {
           <h2 className="text-xl sm:text-2xl font-bold">Application Form</h2>
           <p className="text-white/80 mt-1 text-sm sm:text-base">Complete all sections to submit your application</p>
         </div>
+
+        {/* Error message display */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Loading indicator */}
+        {loading && (
+          <div className="flex justify-center items-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-2">Processing your application...</span>
+          </div>
+        )}
 
         {/* Mobile Menu Button */}
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-2">
@@ -189,7 +193,7 @@ export default function ApplicationForm() {
                 }
               }}
               className="flex-1 sm:flex-none px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200"
-              disabled={activeTab === tabs[0].id}
+              disabled={activeTab === tabs[0].id || loading}
             >
               Previous
             </button>
@@ -198,8 +202,9 @@ export default function ApplicationForm() {
               <button
                 onClick={handleSubmit}
                 className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                disabled={loading}
               >
-                Submit Application
+                {loading ? 'Processing...' : 'Submit Application'}
               </button>
             ) : (
               <button
@@ -210,7 +215,7 @@ export default function ApplicationForm() {
                   }
                 }}
                 className="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                disabled={activeTab === tabs[tabs.length - 1].id}
+                disabled={activeTab === tabs[tabs.length - 1].id || loading}
               >
                 Next
               </button>
@@ -229,14 +234,16 @@ export default function ApplicationForm() {
               <button
                 onClick={cancelSubmit}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSubmit}
                 className="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700"
+                disabled={loading}
               >
-                Yes, Submit
+                {loading ? 'Processing...' : 'Yes, Submit'}
               </button>
             </div>
           </div>
