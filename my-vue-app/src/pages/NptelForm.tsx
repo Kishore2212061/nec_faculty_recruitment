@@ -5,10 +5,12 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 interface Course {
   id?: string;
   courseId?: number;
-  courseName: string;
+  course_name: string;
   platform: string;
   duration: string;
-  scoreEarned: string;
+
+  score_earned
+  : string;
 }
 
 export default function CourseAndInfoForm() {
@@ -19,10 +21,12 @@ export default function CourseAndInfoForm() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [courseForm, setCourseForm] = useState<Course>({
-    courseName: '',
+    course_name: '',
     platform: 'NPTEL',
     duration: '4 weeks',
-    scoreEarned: '',
+
+    score_earned
+      : '',
   });
 
   // Additional info state
@@ -54,9 +58,12 @@ export default function CourseAndInfoForm() {
             setAdditionalInfo({
               family: res.data.family || '',
               reference: res.data.reference || '',
-              anyOtherInfo: res.data.anyOtherInfo || '',
-              awardsDetails: res.data.awardsDetails || '',
-              noOfAwards: res.data.noOfAwards || 0
+              anyOtherInfo: res.data.
+                any_other_info || '',
+              awardsDetails: res.data.awards_details
+                || '',
+              noOfAwards: res.data.
+                no_of_awards || 0
             });
           }
         })
@@ -78,16 +85,16 @@ export default function CourseAndInfoForm() {
   // Reset the course form to its initial state
   const resetCourseForm = () => {
     setCourseForm({
-      courseName: '',
+      course_name: '',
       platform: 'NPTEL',
       duration: '4 weeks',
-      scoreEarned: '',
+      score_earned: '',
     });
   };
 
   // Add a new course to the list
   const addCourse = () => {
-    if (!courseForm.courseName) {
+    if (!courseForm.course_name) {
       alert('Please enter a course name');
       return;
     }
@@ -104,10 +111,14 @@ export default function CourseAndInfoForm() {
   const editCourse = (course: Course) => {
     setEditingCourseId(course.id || '');
     setCourseForm({
-      courseName: course.courseName,
+      course_name: course.course_name,
       platform: 'NPTEL',
       duration: course.duration,
-      scoreEarned: course.scoreEarned,
+
+      score_earned
+        : course.
+          score_earned
+      ,
     });
   };
 
@@ -182,7 +193,7 @@ export default function CourseAndInfoForm() {
                     <input
                       type="text"
                       name="courseName"
-                      value={courseForm.courseName}
+                      value={courseForm.course_name}
                       onChange={handleCourseInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter course name"
@@ -216,7 +227,9 @@ export default function CourseAndInfoForm() {
                     <input
                       type="text"
                       name="scoreEarned"
-                      value={courseForm.scoreEarned}
+                      value={courseForm.
+                        score_earned
+                      }
                       onChange={handleCourseInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="e.g., 85%"
@@ -274,10 +287,10 @@ export default function CourseAndInfoForm() {
                       ) : (
                         courses.map((course) => (
                           <tr key={course.id} className="hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-700">{course.courseName}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{course.course_name}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">{course.platform}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">{course.duration}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{course.scoreEarned}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{course.score_earned}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">
                               <div className="flex space-x-2">
                                 <button
