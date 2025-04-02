@@ -4,14 +4,14 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 
 interface Publication {
   id?: string;
-  journalType: string;
-  journalName: string;
+  journal_type: string;
+  journal_name: string;
   publisher: string;
-  paperTitle: string;
-  volNo: string;
+  paper_title: string;
+  vol_no: string;
   doi: string;
-  publicationDate: string;
-  impactFactor: string;
+  publication_date: string;
+  impact_factor: string;
 }
 
 export default function PublicationsForm() {
@@ -22,14 +22,14 @@ export default function PublicationsForm() {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [editingPublicationId, setEditingPublicationId] = useState<string | null>(null);
   const [publicationForm, setPublicationForm] = useState<Publication>({
-    journalType: '',
-    journalName: '',
+    journal_type: '',
+    journal_name: '',
     publisher: '',
-    paperTitle: '',
-    volNo: '',
+    paper_title: '',
+    vol_no: '',
     doi: '',
-    publicationDate: '',
-    impactFactor: '',
+    publication_date: '',
+    impact_factor: '',
   });
 
   // Journal type options
@@ -41,6 +41,7 @@ export default function PublicationsForm() {
       axios.get(`http://localhost:5000/api/publications/${userId}`)
         .then(res => {
           if (res.data) {
+            console.log(res.data);
             setPublications(res.data);
           }
         })
@@ -56,38 +57,23 @@ export default function PublicationsForm() {
   // Reset the publication form to its initial state
   const resetPublicationForm = () => {
     setPublicationForm({
-      journalType: '',
-      journalName: '',
+      journal_type: '',
+      journal_name: '',
       publisher: '',
-      paperTitle: '',
-      volNo: '',
+      paper_title: '',
+      vol_no: '',
       doi: '',
-      publicationDate: '',
-      impactFactor: '',
+      publication_date: '',
+      impact_factor: '',
     });
   };
 
   // Add a new publication to the list
   const addPublication = () => {
-    // Check if all fields are filled
-    const requiredFields = [
-      { name: 'Journal Type', value: publicationForm.journalType },
-      { name: 'Journal Name', value: publicationForm.journalName },
-      { name: 'Publisher', value: publicationForm.publisher },
-      { name: 'Paper Title', value: publicationForm.paperTitle },
-      { name: 'Volume Number', value: publicationForm.volNo },
-      { name: 'DOI', value: publicationForm.doi },
-      { name: 'Publication Date', value: publicationForm.publicationDate },
-      { name: 'Impact Factor', value: publicationForm.impactFactor },
-    ];
-
-    const emptyFields = requiredFields.filter(field => !field.value.trim());
-    
-    if (emptyFields.length > 0) {
-      alert(`Please fill in all required fields: ${emptyFields.map(field => field.name).join(', ')}`);
+    if (!publicationForm.journal_name || !publicationForm.paper_title) {
+      alert('Please enter journal name and paper title');
       return;
     }
-
     // Use crypto.randomUUID() for unique id generation (if supported)
     const newPublication: Publication = {
       id: crypto.randomUUID(),
@@ -101,40 +87,20 @@ export default function PublicationsForm() {
   const editPublication = (publication: Publication) => {
     setEditingPublicationId(publication.id || '');
     setPublicationForm({
-      journalType: publication.journalType,
-      journalName: publication.journalName,
+      journal_type: publication.journal_type,
+      journal_name: publication.journal_name,
       publisher: publication.publisher,
-      paperTitle: publication.paperTitle,
-      volNo: publication.volNo,
+      paper_title: publication.paper_title,
+      vol_no: publication.vol_no,
       doi: publication.doi,
-      publicationDate: publication.publicationDate,
-      impactFactor: publication.impactFactor,
+      publication_date: publication.publication_date,
+      impact_factor: publication.impact_factor,
     });
   };
 
   // Update the edited publication and reset the form
   const updatePublication = () => {
     if (!editingPublicationId) return;
-    
-    // Check if all fields are filled
-    const requiredFields = [
-      { name: 'Journal Type', value: publicationForm.journalType },
-      { name: 'Journal Name', value: publicationForm.journalName },
-      { name: 'Publisher', value: publicationForm.publisher },
-      { name: 'Paper Title', value: publicationForm.paperTitle },
-      { name: 'Volume Number', value: publicationForm.volNo },
-      { name: 'DOI', value: publicationForm.doi },
-      { name: 'Publication Date', value: publicationForm.publicationDate },
-      { name: 'Impact Factor', value: publicationForm.impactFactor },
-    ];
-
-    const emptyFields = requiredFields.filter(field => !field.value.trim());
-    
-    if (emptyFields.length > 0) {
-      alert(`Please fill in all required fields: ${emptyFields.map(field => field.name).join(', ')}`);
-      return;
-    }
-    
     const updatedPublications = publications.map(publication =>
       publication.id === editingPublicationId ? { ...publication, ...publicationForm } : publication
     );
@@ -194,15 +160,12 @@ export default function PublicationsForm() {
                 {/* Publication Input Form */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Journal Type <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Journal Type</label>
                     <select
-                      name="journalType"
-                      value={publicationForm.journalType}
+                      name="journal_type"
+                      value={publicationForm.journal_type}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
-                      required
                     >
                       <option value="">Select</option>
                       {journalTypeOptions.map(option => (
@@ -211,23 +174,18 @@ export default function PublicationsForm() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Journal Name <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Journal Name</label>
                     <input
                       type="text"
-                      name="journalName"
-                      value={publicationForm.journalName}
+                      name="journal_name"
+                      value={publicationForm.journal_name}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter journal name"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Publisher <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Publisher</label>
                     <input
                       type="text"
                       name="publisher"
@@ -235,41 +193,32 @@ export default function PublicationsForm() {
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter publisher"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Paper Title <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Paper Title</label>
                     <input
                       type="text"
-                      name="paperTitle"
-                      value={publicationForm.paperTitle}
+                      name="paper_title"
+                      value={publicationForm.paper_title}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter paper title"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Volume Number <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Volume Number</label>
                     <input
                       type="text"
-                      name="volNo"
-                      value={publicationForm.volNo}
+                      name="vol_no"
+                      value={publicationForm.vol_no}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter volume number"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      DOI <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">DOI</label>
                     <input
                       type="text"
                       name="doi"
@@ -277,34 +226,27 @@ export default function PublicationsForm() {
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter DOI"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Publication Date <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Publication Date</label>
                     <input
                       type="month"
-                      name="publicationDate"
-                      value={publicationForm.publicationDate}
+                      name="publication_date"
+                      value={publicationForm.publication_date}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
-                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Impact Factor <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Impact Factor</label>
                     <input
                       type="text"
-                      name="impactFactor"
-                      value={publicationForm.impactFactor}
+                      name="impact_factor"
+                      value={publicationForm.impact_factor}
                       onChange={handlePublicationInputChange}
                       className="w-full p-2 border border-gray-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-gray-50 hover:bg-white"
                       placeholder="Enter impact factor"
-                      required
                     />
                   </div>
                   <div className="md:col-span-3 flex justify-end">
@@ -360,11 +302,11 @@ export default function PublicationsForm() {
                       ) : (
                         publications.map((publication) => (
                           <tr key={publication.id} className="hover:bg-gray-50">
-                            <td className="py-3 px-4 text-sm text-gray-700">{publication.journalType}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{publication.journalName}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{publication.paperTitle}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{publication.volNo}</td>
-                            <td className="py-3 px-4 text-sm text-gray-700">{publication.publicationDate}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{publication.journal_type}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{publication.journal_name}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{publication.paper_title}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{publication.vol_no}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{publication.publication_date}</td>
                             <td className="py-3 px-4 text-sm text-gray-700">
                               <div className="flex space-x-2">
                                 <button
